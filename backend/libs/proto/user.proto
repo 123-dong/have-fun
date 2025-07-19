@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/micro-app/backend/libs/proto;proto";
+
+package proto;
+
+import "common.proto";
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User) {}
+}
+
+message GetUserRequest {
+  int32 id = 1;
+}
