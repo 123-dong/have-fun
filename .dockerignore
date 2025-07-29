@@ -1,0 +1,47 @@
+# 📦 Node.js
+node_modules/
+dist/
+build/
+.vite/
+
+# 🍃 Vite cache
+.vite/
+
+# 🔧 Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 📂 VSCode
+.vscode/
+
+# 📁 OS files
+.DS_Store
+Thumbs.db
+
+# 🐙 Rust
+/target/
+/**/target/
+**/*.rs.bk
+
+# 🐹 Go
+**/bin/
+**/vendor/
+**/*.exe
+**/*.exe~
+**/*.dll
+**/*.so
+**/*.dylib
+
+# 📜 Misc
+*.log
+*.tmp
+*.swp
+
+# 💡 By language convention
+.idea/
+*.iml
+
+# ⚙️ Cargo specific
+Cargo.lock (optional, if it's a library)
