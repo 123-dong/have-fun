@@ -1,7 +1,6 @@
-# shared CORE toml
 
 [package]
-name = "core"
+name = "shared"
 version = "0.1.0"
 edition = "2024"
 

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gateway", "services/user", "core", "proto"]
+members = ["gateway", "services/user", "shared", "proto"]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }

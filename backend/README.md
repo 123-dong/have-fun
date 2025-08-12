@@ -1,21 +1,26 @@
 ```
 backend/
 ├── Cargo.toml                      # Cargo workspace
-├── proto/                          # Proto definitions
-│   ├── user/
-│   │   ├── v1/
-│   │   └── user.proto
-│   ├── auth/
-│   └── product/
-├── core/                           # Core lib & shared utils
+├── proto
+│   ├── Cargo.toml
+│   ├── build.rs
+│   ├── generated
+│   │   ├── all_descriptor.bin
+│   │   └── user.v1.rs
+│   ├── src
+│   │   └── lib.rs
+│   └── user
+│       └── v1
+│           └── user.proto
+├── shared/                           # Shared lib & shared utils
 │   └── src/
 │       ├── lib.rs
-│       ├── config.rs
-│       ├── constants.rs
-│       ├── database.rs
-│       ├── errors.rs
 │       ├── models.rs
+│       ├── errors.rs
+│       ├── config.rs
+│       ├── database.rs
 │       ├── utils.rs
+│       ├── constants.rs
 │       └── macros.rs
 ├── services/                       # Each service as independent crate
 │   ├── user/
