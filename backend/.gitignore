@@ -1,6 +1,22 @@
-/target
-/generated
-.DS_Store
-*.log
+# Rust build
+/target/
+**/*.rs.bk
+# Cargo
+Cargo.lock
+# IDE/Editor
 .vscode/
+.idea/
+*.iml
+# Logs
+*.log
+# OS junk files
+.DS_Store
+Thumbs.db
+# Generated code (proto, build.rs output)
+proto/generated/
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
 buf.yaml

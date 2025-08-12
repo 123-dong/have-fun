@@ -1,7 +1,7 @@
 pub mod config;
 pub mod constants;
-pub mod db;
+pub mod database;
 pub mod errors;
-pub mod middleware;
+pub mod macros;
 pub mod models;
 pub mod utils;
