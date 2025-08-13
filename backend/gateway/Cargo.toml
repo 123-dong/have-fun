@@ -10,7 +10,6 @@ proto = { path = "../proto" }
 tokio = { workspace = true }
 tonic = { workspace = true }
 
-
 [[bin]]
 name = "client"
 path = "src/client.rs"

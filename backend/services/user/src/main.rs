@@ -1,48 +1,32 @@
 use proto::DESCRIPTOR_SET;
-use proto::user::v1::{
-    GetResponse,
-    user_service_server::{UserService, UserServiceServer},
-};
+use proto::user::v1::user_service_server::UserServiceServer;
 
-// tonic
-use tonic::{Response, transport::Server};
+mod repository;
+mod service_impl;
+use shared::database::*;
+
+use tonic::transport::Server;
 use tonic_reflection::server::Builder;
-
-#[derive(Debug, Default)]
-pub struct User;
-
-#[tonic::async_trait]
-impl UserService for User {
-    async fn get(
-        &self,
-        request: tonic::Request<proto::user::v1::GetRequest>,
-    ) -> std::result::Result<tonic::Response<proto::user::v1::GetResponse>, tonic::Status> {
-        println!("Got a request: {:?}", request);
-        let reply = GetResponse {
-            id: request.into_inner().id,
-            name: "Health".into(),
-        };
-
-        Ok(Response::new(reply))
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db_url = "postgres://admin:123@localhost:5432/demo_db";
+    let pool = init_pg_pool(db_url, 5).await?;
+    init_db(&pool).await?;
+
     let addr = "[::1]:50051".parse()?;
-    let service = User::default();
+    let user_service = service_impl::UserSvc { pool };
 
     let reflection = Builder::configure()
         .register_encoded_file_descriptor_set(DESCRIPTOR_SET)
-        .build()
-        .unwrap();
+        .build()?;
 
     println!("UserService listening on {}", addr);
 
     Server::builder()
-        .add_service(UserServiceServer::new(service))
+        .add_service(UserServiceServer::new(user_service))
         .add_service(reflection)
-        .serve(addr)
+        .serve_with_shutdown(addr, shared::utils::graceful_shutdown())
         .await?;
 
     Ok(())

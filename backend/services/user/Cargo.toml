@@ -10,3 +10,5 @@ proto = { path = "../../proto" }
 tokio = { workspace = true }
 tonic = { workspace = true }
 tonic-reflection = { workspace = true }
+sqlx = { workspace = true }
+uuid = { workspace = true }

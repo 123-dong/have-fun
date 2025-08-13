@@ -1,26 +1,26 @@
 // use sqlx::{Error, PgPool};
 // use std::sync::Arc;
-// use tracing::{error, info};
+use tracing::info;
 // use uuid::Uuid;
 
-// pub async fn shutdown_signal() {
-//     #[cfg(unix)]
-//     {
-//         use tokio::signal::unix::{SignalKind, signal};
-//         let mut sigterm = signal(SignalKind::terminate()).unwrap();
-//         tokio::select! {
-//             _ = tokio::signal::ctrl_c() => {},
-//             _ = sigterm.recv() => {},
-//         }
-//     }
+pub async fn graceful_shutdown() {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{SignalKind, signal};
+        let mut sigterm = signal(SignalKind::terminate()).unwrap();
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {},
+            _ = sigterm.recv() => {},
+        }
+    }
 
-//     #[cfg(not(unix))]
-//     {
-//         tokio::signal::ctrl_c().await.unwrap();
-//     }
+    #[cfg(not(unix))]
+    {
+        tokio::signal::ctrl_c().await.unwrap();
+    }
 
-//     info!("Shutdown signal received");
-// }
+    info!("Shutdown signal received");
+}
 
 // pub fn generate_id() -> Uuid {
 //     Uuid::new_v4()

@@ -15,38 +15,45 @@ backend/
 ├── shared/                           # Shared lib & shared utils
 │   └── src/
 │       ├── lib.rs
-│       ├── models.rs
-│       ├── errors.rs
-│       ├── config.rs
 │       ├── database.rs
-│       ├── utils.rs
-│       ├── constants.rs
+│       ├── errors.rs
+│       ├── models.rs
+│       ├── config.rs
 │       └── macros.rs
+│       ├── constants.rs
+│       ├── utils.rs
 ├── services/                       # Each service as independent crate
 │   ├── user/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
 │   │       ├── service_impl.rs
-│   │       └── logic.rs
+│   │       └── repository.rs
 │   ├── auth/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
 │   │       ├── service_impl.rs
-│   │       └── logic.rs
+│   │       └── repository.rs
 │   └── product/
 │       ├── Cargo.toml
 │       └── src/
 │           ├── main.rs
 │           ├── service_impl.rs
-│           └── logic.rs
+│           └── repository.rs
 ├── gateway/                        # API Gateway
 │   ├── Cargo.toml
 │   └── src/
 │       ├── main.rs
-│       ├── grpc_client.rs
+│       ├── client.rs
 │       ├── handlers.rs
 │       ├── middleware.rs
 │       └── routes.rs
 ```
+
+--name rust_db \
+ -e POSTGRES_USER=admin \
+ -e POSTGRES_PASSWORD=123 \
+ -e POSTGRES_DB=demo_db \
+ -p 5432:5432 \
+ postgres:16-alpine
