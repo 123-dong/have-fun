@@ -6,3 +6,11 @@ edition = "2024"
 [dependencies]
 shared = { path = "../shared" }
 proto = { path = "../proto" }
+
+tokio = { workspace = true }
+tonic = { workspace = true }
+
+
+[[bin]]
+name = "client"
+path = "src/client.rs"

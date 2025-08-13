@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
         .file_descriptor_set_path(generated_path.join(DESCRIPTOR_FILE))
         .build_server(true)
-        .build_client(false)
+        .build_client(true)
         .out_dir(&generated_path)
         .compile(&proto_paths, &[proto_root.to_string_lossy().as_ref()])?;
 
