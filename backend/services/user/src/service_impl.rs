@@ -1,24 +1,24 @@
+use crate::repository::UserRepo;
 use proto::user::v1::{GetRequest, GetResponse, user_service_server::UserService};
-use sqlx::PgPool;
-use std::sync::Arc;
 use tonic::{Request, Response, Status};
+use tracing::info;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct UserSvc {
-    pub pool: Arc<PgPool>,
+    pub repo: UserRepo,
 }
 
 #[tonic::async_trait]
 impl UserService for UserSvc {
     async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetResponse>, Status> {
-        println!("Got request: {:?}", request);
+        info!("Got request: {:?}", request);
 
         let req = request.into_inner();
         let id = req.id;
 
-        let result = sqlx::query_as::<_, (i32, String)>("SELECT id, name FROM users WHERE id = $1")
-            .bind(id)
-            .fetch_optional(&*self.pool)
+        let result = self
+            .repo
+            .get_user(id)
             .await
             .map_err(|e| Status::internal(format!("Database error: {}", e)))?;
 

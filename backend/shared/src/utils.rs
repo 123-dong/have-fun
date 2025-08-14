@@ -1,7 +1,8 @@
 // use sqlx::{Error, PgPool};
 // use std::sync::Arc;
-use tracing::info;
 // use uuid::Uuid;
+
+use tracing::info;
 
 pub async fn graceful_shutdown() {
     #[cfg(unix)]
@@ -16,10 +17,11 @@ pub async fn graceful_shutdown() {
 
     #[cfg(not(unix))]
     {
-        tokio::signal::ctrl_c().await.unwrap();
+        signal::ctrl_c().await.unwrap();
     }
 
-    info!("Shutdown signal received");
+    info!("Shutting down...");
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 }
 
 // pub fn generate_id() -> Uuid {
