@@ -1,10 +1,10 @@
-import "./App.css";
+import UserList from "./pages/UserList";
 
 function App() {
   return (
-    <div className="simple-container">
-      <h1>Welcome</h1>
-      <p>This is a minimal micro-app frontend.</p>
+    <div className="App">
+      <h1>Users</h1>
+      <UserList />
     </div>
   );
 }
