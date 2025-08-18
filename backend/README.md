@@ -1,54 +1,35 @@
 ```
-backend/
-├── Cargo.toml                      # Cargo workspace
-├── proto
-│   ├── Cargo.toml
-│   ├── build.rs
-│   ├── generated
-│   │   ├── all_descriptor.bin
-│   │   └── user.v1.rs
-│   ├── src
-│   │   └── lib.rs
-│   └── user
-│       └── v1
-│           └── user.proto
-├── shared/                           # Shared lib & shared utils
-│   └── src/
-│       ├── lib.rs
-│       ├── database.rs
-│       ├── errors.rs
-│       ├── models.rs
-│       ├── config.rs
-│       └── macros.rs
-│       ├── constants.rs
-│       ├── utils.rs
-├── services/                       # Each service as independent crate
-│   ├── user/
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── main.rs
-│   │       ├── service_impl.rs
-│   │       └── repository.rs
-│   ├── auth/
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── main.rs
-│   │       ├── service_impl.rs
-│   │       └── repository.rs
-│   └── product/
-│       ├── Cargo.toml
-│       └── src/
-│           ├── main.rs
-│           ├── service_impl.rs
-│           └── repository.rs
-├── gateway/                        # API Gateway
+project-root/
+├── Cargo.toml                  # workspace
+├── proto/                      # .proto files
+│   ├── user/v1/user.proto
+│   └── build.rs                # tonic-build
+│
+├── shared/                     # common crate (DB, models, utils, config)
 │   ├── Cargo.toml
 │   └── src/
-│       ├── main.rs
-│       ├── client.rs
-│       ├── handlers.rs
-│       ├── middleware.rs
-│       └── routes.rs
+│       ├── config.rs
+│       ├── database.rs
+│       ├── models.rs
+│       ├── utils.rs
+│       └── lib.rs
+│
+├── user-service/               # gRPC service (tonic)
+│   ├── Cargo.toml
+│   └── src/
+│       ├── main.rs             # entrypoint gRPC server
+│       ├── server_impl.rs      # tonic server + handlers
+│       ├── service.rs          # business logic
+│       ├── repository.rs       # sqlx repo
+│
+│
+└── gateway/                     # REST ↔ gRPC (Axum)
+    ├── Cargo.toml
+    └── src/
+        ├── main.rs             # entrypoint REST server
+        ├── router.rs           # routes
+        ├── handler.rs          # REST handlers calling gRPC
+        └── middleware.rs       # logging, auth, rate-limiting
 ```
 
 --name rust_db \
@@ -57,3 +38,28 @@ backend/
  -e POSTGRES_DB=demo_db \
  -p 5432:5432 \
  postgres:16-alpine
+
+```
+Frontend (REST/JSON)
+    ↓
+REST Gateway (REST ↔ gRPC)
+    ↓
+gRPC Service (tonic)
+    ↓
+Repository (sqlx)
+    ↓
+Database (Postgres)
+```
+
+```
+Browser ──HTTP──▶ Gateway (Axum)
+                         │
+                         ▼
+                 gRPC Client (tonic)
+                         │
+                         ▼
+                 User Service (gRPC Server)
+                         │
+                         ▼
+                      Database
+```

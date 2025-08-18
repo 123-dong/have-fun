@@ -1,16 +1,37 @@
 syntax = "proto3";
-
 package user.v1;
 
+import "google/protobuf/empty.proto";
+
 service UserService {
-  rpc Get(GetRequest) returns (GetResponse);
+  rpc Create(CreateRequest) returns (User);
+  rpc Get(GetRequest) returns (User);
+  rpc Update(UpdateRequest) returns (User);
+  rpc Delete(GetRequest) returns (DeleteResponse);
+  rpc List(google.protobuf.Empty) returns (stream User);
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message CreateRequest {
+  string name = 1;
+  string email = 2;
 }
 
 message GetRequest {
-  int32 id = 1;
+  string id = 1;
 }
 
-message GetResponse {
-  int32 id = 1;
+message UpdateRequest {
+  string id = 1;
   string name = 2;
+  string email = 3;
+}
+
+message DeleteResponse {
+  bool success = 1;
 }

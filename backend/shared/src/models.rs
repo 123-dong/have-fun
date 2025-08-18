@@ -1,16 +1,16 @@
-use serde::Serialize;
-
-#[derive(Serialize)]
-pub struct GetUserResponse {
-    pub id: i32,
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct UserModel {
+    pub id: uuid::Uuid,
     pub name: String,
+    pub email: String,
 }
 
-impl From<proto::user::v1::GetResponse> for GetUserResponse {
-    fn from(resp: proto::user::v1::GetResponse) -> Self {
+impl From<UserModel> for proto::user::v1::User {
+    fn from(u: UserModel) -> Self {
         Self {
-            id: resp.id,
-            name: resp.name,
+            id: u.id.to_string(),
+            name: u.name,
+            email: u.email,
         }
     }
 }
