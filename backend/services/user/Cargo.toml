@@ -14,9 +14,9 @@ tonic-reflection = { workspace = true }
 futures = { workspace = true }
 
 # database
-sqlx = { workspace = true }
 uuid = { workspace = true }
-chrono = { workspace = true }
+sqlx = { workspace = true }
+# chrono = { workspace = true }
 dotenvy = { workspace = true }
 
 tracing = { workspace = true }
