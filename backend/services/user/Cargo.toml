@@ -9,9 +9,12 @@ proto = { path = "../../proto" }
 
 # core
 tokio = { workspace = true }
+tokio-stream = { workspace = true }
+async-stream = { workspace = true }
+
 tonic = { workspace = true }
 tonic-reflection = { workspace = true }
-futures = { workspace = true }
+
 
 # database
 uuid = { workspace = true }

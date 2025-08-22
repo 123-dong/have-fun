@@ -1,22 +1,56 @@
 use crate::service::UserSvc;
-use futures::Stream;
 use proto::user::v1::user_service_server::UserService;
+use tokio_stream::StreamExt;
 
-pub(crate) struct UserHdl {
-    service: UserSvc,
+#[derive(Clone)]
+pub struct UserHdl {
+    svc: UserSvc, // không cần Arc<UserSvc>
 }
 
 impl UserHdl {
-    pub fn new(service: UserSvc) -> Self {
-        Self { service }
+    pub fn new(svc: UserSvc) -> Self {
+        Self { svc }
     }
 }
 
 #[tonic::async_trait]
 impl UserService for UserHdl {
-    type ListStream = std::pin::Pin<
-        Box<dyn Stream<Item = Result<proto::user::v1::User, tonic::Status>> + Send + 'static>,
+    type ListFullStream = std::pin::Pin<
+        Box<
+            dyn tokio_stream::Stream<Item = Result<proto::user::v1::User, tonic::Status>>
+                + Send
+                + 'static,
+        >,
     >;
+
+    async fn list_full(
+        &self,
+        _request: tonic::Request<()>,
+    ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
+        let stream = self.svc.list_full();
+
+        let out_stream = stream.map(|res| {
+            res.map(proto::user::v1::User::from)
+                .map_err(|e| tonic::Status::internal(e.to_string()))
+        });
+
+        Ok(tonic::Response::new(Box::pin(out_stream)))
+    }
+
+    async fn list_bulk(
+        &self,
+        _request: tonic::Request<()>,
+    ) -> Result<tonic::Response<proto::user::v1::ListBulkResponse>, tonic::Status> {
+        let users = self
+            .svc
+            .list_bulk()
+            .await
+            .map_err(|e| tonic::Status::internal(e.to_string()))?;
+
+        Ok(tonic::Response::new(proto::user::v1::ListBulkResponse {
+            users: users.into_iter().map(Into::into).collect(),
+        }))
+    }
 
     async fn create(
         &self,
@@ -25,7 +59,7 @@ impl UserService for UserHdl {
         let req = request.into_inner();
 
         let user = self
-            .service
+            .svc
             .create_user(&req.name, &req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
@@ -41,28 +75,13 @@ impl UserService for UserHdl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let user = self
-            .service
+            .svc
             .get_user(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?;
 
         Ok(tonic::Response::new(user.into()))
-    }
-
-    async fn list(
-        &self,
-        _: tonic::Request<()>,
-    ) -> Result<tonic::Response<Self::ListStream>, tonic::Status> {
-        let users = self
-            .service
-            .list_users()
-            .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?;
-
-        // convert Vec<UserModel> -> stream of proto::User
-        let output = futures::stream::iter(users.into_iter().map(|u| Ok(u.into())));
-        Ok(tonic::Response::new(Box::pin(output)))
     }
 
     async fn delete(
@@ -73,7 +92,7 @@ impl UserService for UserHdl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let deleted = self
-            .service
+            .svc
             .delete_user(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
@@ -92,7 +111,7 @@ impl UserService for UserHdl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let user = self
-            .service
+            .svc
             .update_user(id, &req.name, &req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?

@@ -8,7 +8,9 @@ service UserService {
   rpc Get(GetRequest) returns (User);
   rpc Update(UpdateRequest) returns (User);
   rpc Delete(GetRequest) returns (DeleteResponse);
-  rpc List(google.protobuf.Empty) returns (stream User);
+
+  rpc ListBulk(google.protobuf.Empty) returns (ListBulkResponse);
+  rpc ListFull(google.protobuf.Empty) returns (stream User);
 }
 
 message User {
@@ -17,6 +19,7 @@ message User {
   string email = 3;
 }
 
+// Requests
 message CreateRequest {
   string name = 1;
   string email = 2;
@@ -32,6 +35,11 @@ message UpdateRequest {
   string email = 3;
 }
 
+// Responses
 message DeleteResponse {
   bool success = 1;
+}
+
+message ListBulkResponse {
+  repeated User users = 1;
 }

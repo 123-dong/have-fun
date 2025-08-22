@@ -1,13 +1,35 @@
-use shared::database::DbPool;
+use async_stream::try_stream;
+use shared::database::DbPool; // pub type DbPool = Arc<PgPool>;
 use shared::models::UserModel;
+use tokio_stream::StreamExt;
 
-pub(crate) struct UserRepo {
+#[derive(Clone)]
+pub struct UserRepo {
     pool: DbPool,
 }
 
 impl UserRepo {
     pub fn new(pool: DbPool) -> Self {
         Self { pool }
+    }
+
+    /// Stream `'static` để Tonic dùng
+    pub fn list_full(
+        &self,
+    ) -> impl tokio_stream::Stream<Item = sqlx::Result<UserModel>> + Send + 'static {
+        let pool = self.pool.clone(); // own Arc<PgPool>
+
+        try_stream! {
+            let mut rows = sqlx::query_as!(
+                UserModel,
+                r#"SELECT id, name, email FROM users ORDER BY name"#
+            )
+            .fetch(&*pool);
+
+            while let Some(row) = rows.next().await {
+                yield row?;
+            }
+        }
     }
 
     pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
@@ -74,7 +96,7 @@ impl UserRepo {
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<UserModel>> {
+    pub async fn list_bulk(&self) -> sqlx::Result<Vec<UserModel>> {
         sqlx::query_as!(
             UserModel,
             r#"
