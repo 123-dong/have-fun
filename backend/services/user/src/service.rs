@@ -21,12 +21,12 @@ impl UserSvc {
         self.repo.list_full()
     }
 
-    pub async fn create_user(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
-        self.repo.create(name, email).await
-    }
-
     pub async fn get_user(&self, id: uuid::Uuid) -> sqlx::Result<Option<UserModel>> {
         self.repo.get(id).await
+    }
+
+    pub async fn create_user(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
+        self.repo.create(name, email).await
     }
 
     pub async fn update_user(

@@ -6,7 +6,7 @@ members = ["gateway", "services/user", "shared", "proto"]
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
-async-stream = "=0.3"
+async-stream = "0.3"
 
 # Web & gRPC
 axum = "0.7"

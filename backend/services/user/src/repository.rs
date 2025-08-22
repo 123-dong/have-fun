@@ -13,7 +13,6 @@ impl UserRepo {
         Self { pool }
     }
 
-    /// Stream `'static` để Tonic dùng
     pub fn list_full(
         &self,
     ) -> impl tokio_stream::Stream<Item = sqlx::Result<UserModel>> + Send + 'static {
@@ -32,18 +31,16 @@ impl UserRepo {
         }
     }
 
-    pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
+    pub async fn list_bulk(&self) -> sqlx::Result<Vec<UserModel>> {
         sqlx::query_as!(
             UserModel,
             r#"
-            INSERT INTO users (name, email)
-            VALUES ($1, $2)
-            RETURNING id, name, email
-            "#,
-            name,
-            email
+            SELECT id, name, email
+            FROM users
+            ORDER BY name
+            "#
         )
-        .fetch_one(&*self.pool)
+        .fetch_all(&*self.pool)
         .await
     }
 
@@ -58,6 +55,21 @@ impl UserRepo {
             id
         )
         .fetch_optional(&*self.pool)
+        .await
+    }
+
+    pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
+        sqlx::query_as!(
+            UserModel,
+            r#"
+            INSERT INTO users (name, email)
+            VALUES ($1, $2)
+            RETURNING id, name, email
+            "#,
+            name,
+            email
+        )
+        .fetch_one(&*self.pool)
         .await
     }
 
@@ -94,18 +106,5 @@ impl UserRepo {
         .execute(&*self.pool)
         .await?;
         Ok(result.rows_affected() > 0)
-    }
-
-    pub async fn list_bulk(&self) -> sqlx::Result<Vec<UserModel>> {
-        sqlx::query_as!(
-            UserModel,
-            r#"
-            SELECT id, name, email
-            FROM users
-            ORDER BY name
-            "#
-        )
-        .fetch_all(&*self.pool)
-        .await
     }
 }

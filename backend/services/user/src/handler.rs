@@ -4,7 +4,7 @@ use tokio_stream::StreamExt;
 
 #[derive(Clone)]
 pub struct UserHdl {
-    svc: UserSvc, // không cần Arc<UserSvc>
+    svc: UserSvc,
 }
 
 impl UserHdl {
@@ -27,14 +27,12 @@ impl UserService for UserHdl {
         &self,
         _request: tonic::Request<()>,
     ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
-        let stream = self.svc.list_full();
-
-        let out_stream = stream.map(|res| {
+        let stream = self.svc.list_full().map(|res| {
             res.map(proto::user::v1::User::from)
                 .map_err(|e| tonic::Status::internal(e.to_string()))
         });
 
-        Ok(tonic::Response::new(Box::pin(out_stream)))
+        Ok(tonic::Response::new(Box::pin(stream)))
     }
 
     async fn list_bulk(
@@ -52,6 +50,23 @@ impl UserService for UserHdl {
         }))
     }
 
+    async fn get(
+        &self,
+        request: tonic::Request<proto::user::v1::GetRequest>,
+    ) -> Result<tonic::Response<proto::user::v1::User>, tonic::Status> {
+        let id = uuid::Uuid::parse_str(&request.into_inner().id)
+            .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
+
+        let user = self
+            .svc
+            .get_user(id)
+            .await
+            .map_err(|e| tonic::Status::internal(e.to_string()))?
+            .ok_or_else(|| tonic::Status::not_found("user not found"))?;
+
+        Ok(tonic::Response::new(user.into()))
+    }
+
     async fn create(
         &self,
         request: tonic::Request<proto::user::v1::CreateRequest>,
@@ -67,16 +82,17 @@ impl UserService for UserHdl {
         Ok(tonic::Response::new(user.into()))
     }
 
-    async fn get(
+    async fn update(
         &self,
-        request: tonic::Request<proto::user::v1::GetRequest>,
+        request: tonic::Request<proto::user::v1::UpdateRequest>,
     ) -> Result<tonic::Response<proto::user::v1::User>, tonic::Status> {
-        let id = uuid::Uuid::parse_str(&request.into_inner().id)
+        let req = request.into_inner();
+        let id = uuid::Uuid::parse_str(&req.id)
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let user = self
             .svc
-            .get_user(id)
+            .update_user(id, &req.name, &req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?;
@@ -100,23 +116,5 @@ impl UserService for UserHdl {
         Ok(tonic::Response::new(proto::user::v1::DeleteResponse {
             success: deleted,
         }))
-    }
-
-    async fn update(
-        &self,
-        request: tonic::Request<proto::user::v1::UpdateRequest>,
-    ) -> Result<tonic::Response<proto::user::v1::User>, tonic::Status> {
-        let req = request.into_inner();
-        let id = uuid::Uuid::parse_str(&req.id)
-            .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
-
-        let user = self
-            .svc
-            .update_user(id, &req.name, &req.email)
-            .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?
-            .ok_or_else(|| tonic::Status::not_found("user not found"))?;
-
-        Ok(tonic::Response::new(user.into()))
     }
 }
