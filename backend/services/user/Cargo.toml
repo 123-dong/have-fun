@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 shared = { path = "../../shared" }
 proto = { path = "../../proto" }
+# ~~~
 
 # core
 tokio = { workspace = true }
@@ -15,11 +16,9 @@ async-stream = { workspace = true }
 tonic = { workspace = true }
 tonic-reflection = { workspace = true }
 
-
 # database
 uuid = { workspace = true }
 sqlx = { workspace = true }
-# chrono = { workspace = true }
 dotenvy = { workspace = true }
 
 tracing = { workspace = true }

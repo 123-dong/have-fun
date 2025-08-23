@@ -6,7 +6,7 @@ build = "build.rs"
 
 [dependencies]
 tonic = { workspace = true }
-prost = "0.12"
+prost = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }

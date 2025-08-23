@@ -4,33 +4,32 @@ members = ["gateway", "services/user", "shared", "proto"]
 
 [workspace.dependencies]
 # Async runtime
-tokio = { version = "1", features = ["full"] }
-tokio-stream = "0.1"
-async-stream = "0.3"
+tokio = { version = "1.26", features = ["full"] }
+tokio-stream = "0.1.17"
+async-stream = "0.3.6"
 
 # Web & gRPC
-axum = "0.7"
-tonic = "0.11"
-tonic-build = "0.11"
-tonic-reflection = "0.11"
+axum = "0.7.9"
+tonic = "0.12.3"
+tonic-build = "0.12.3"
+tonic-reflection = "0.12.3"
+prost = "0.13.5"
 
 # Database & UUID
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.7.4", features = [
     "runtime-tokio-rustls",
     "postgres",
     "uuid",
-    "chrono",
 ] }
 uuid = { version = "1", features = ["v4", "serde"] }
-chrono = "0.4"
 
 # Serialization
-serde = "1"
+serde = "1.0.219"
 
 # Logging & error handling
-tracing = "0.1"
-tracing-subscriber = "0.3"
-thiserror = "2"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+thiserror = "2.0.16"
 
 # Env variables
-dotenvy = "0.15"
+dotenvy = "0.15.7"

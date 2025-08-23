@@ -4,12 +4,12 @@ mod service;
 
 use proto::DESCRIPTOR_SET;
 use proto::user::v1::user_service_server::UserServiceServer;
-use shared::{database, init_logging, init_reflection, utils};
+use shared::{database, init_reflection, utils};
 use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    init_logging!();
+    utils::init_logging();
 
     let db_url = "postgres://admin:123@localhost:5432/demo_db";
     let pool = database::init_pg_pool(db_url, 5).await?;
