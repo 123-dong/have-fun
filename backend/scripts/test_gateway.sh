@@ -3,7 +3,6 @@ set -euo pipefail
 
 GATEWAY_URL="http://localhost:3000/users"
 
-# Hàm lấy id từ JSON trả về
 extract_id() {
   echo "$1" | awk -F'"id":' '{print $2}' | awk -F'"' '{print $2}'
 }
