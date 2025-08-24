@@ -1,14 +1,7 @@
-use crate::grpc_client::UserClient;
+use crate::grpc_client::GrpcClients;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub user: UserClient,
-}
-
-impl AppState {
-    pub async fn init() -> Self {
-        Self {
-            user: UserClient::connect("http://[::1]:50051").await,
-        }
-    }
+    pub clients: Arc<GrpcClients>,
 }

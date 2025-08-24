@@ -1,5 +1,0 @@
-pub mod auth;
-pub mod product;
-
-pub mod user;
-pub use user::new as user_client;

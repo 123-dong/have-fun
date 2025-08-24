@@ -4,20 +4,21 @@ use tonic::transport::Channel;
 use proto::user::v1::user_service_client::UserServiceClient;
 
 #[derive(Clone)]
-pub struct Clients {
+pub struct GrpcClients {
     pub user: UserServiceClient<Channel>,
+    // pub order: OrderClient<Channel>,
 }
 
-impl Clients {
-    pub async fn init(user_addr: &str) -> tonic::Result<Self> {
-        let user = UserServiceClient::connect(user_addr.to_string())
+impl GrpcClients {
+    pub async fn new() -> Arc<Self> {
+        let user = UserServiceClient::connect("http://[::1]:50051")
             .await
-            .unwrap();
+            .expect("connect user service");
 
-        Ok(Self { user })
-    }
+        // let order = OrderClient::connect("http://order-service:50052")
+        //     .await
+        //     .expect("connect order service");
 
-    pub fn shared(self) -> Arc<Self> {
-        Arc::new(self)
+        Arc::new(Self { user })
     }
 }

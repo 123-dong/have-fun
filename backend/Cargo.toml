@@ -24,11 +24,12 @@ sqlx = { version = "0.7.4", features = [
 uuid = { version = "1", features = ["v4", "serde"] }
 
 # Serialization
-serde = "1.0.219"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
 
 # Logging & error handling
 tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
+tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
 thiserror = "2.0.16"
 
 # Env variables

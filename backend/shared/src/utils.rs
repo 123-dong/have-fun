@@ -23,12 +23,3 @@ pub async fn graceful_shutdown() {
 pub fn init_logging() {
     tracing_subscriber::fmt().compact().pretty().init();
 }
-
-#[macro_export]
-macro_rules! init_reflection {
-    ($desc_set:expr) => {{
-        tonic_reflection::server::Builder::configure()
-            .register_encoded_file_descriptor_set($desc_set)
-            .build_v1()
-    }};
-}
