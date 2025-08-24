@@ -1,18 +1,23 @@
-use proto::user::v1::user_service_client::UserServiceClient;
+use std::sync::Arc;
 use tonic::transport::Channel;
 
-#[derive(Clone)]
-pub struct UserClient(UserServiceClient<Channel>);
+use proto::user::v1::user_service_client::UserServiceClient;
 
-impl UserClient {
-    pub async fn connect(addr: &str) -> Self {
-        let client = UserServiceClient::connect(addr.to_string())
+#[derive(Clone)]
+pub struct Clients {
+    pub user: UserServiceClient<Channel>,
+}
+
+impl Clients {
+    pub async fn init(user_addr: &str) -> tonic::Result<Self> {
+        let user = UserServiceClient::connect(user_addr.to_string())
             .await
-            .expect("failed to connect user service");
-        Self(client)
+            .unwrap();
+
+        Ok(Self { user })
     }
 
-    pub fn inner(&self) -> UserServiceClient<Channel> {
-        self.0.clone()
+    pub fn shared(self) -> Arc<Self> {
+        Arc::new(self)
     }
 }
