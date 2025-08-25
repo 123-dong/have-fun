@@ -1,6 +1,7 @@
-use async_stream::try_stream;
 use shared::database::DbPool; // pub type DbPool = Arc<PgPool>;
 use shared::models::UserModel;
+
+use async_stream::try_stream;
 use tokio_stream::StreamExt;
 
 #[derive(Clone)]
@@ -17,7 +18,6 @@ impl UserRepo {
         &self,
     ) -> impl tokio_stream::Stream<Item = sqlx::Result<UserModel>> + Send + 'static {
         let pool = self.pool.clone(); // own Arc<PgPool>
-
         try_stream! {
             let mut rows = sqlx::query_as!(
                 UserModel,

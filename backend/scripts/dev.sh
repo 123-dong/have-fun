@@ -1,6 +1,15 @@
 #!/bin/zsh
 
-cargo run --bin gateway 2>&1 | tee /dev/tty &
-cargo run --bin user 2>&1 | tee /dev/tty &
+cargo run --bin user &
+USER_PID=$!
 
-wait
+echo "Waiting for user service..."
+until nc -z localhost 50051; do
+  sleep 1
+done
+echo "User service is up!"
+
+cargo run --bin gateway &
+GATEWAY_PID=$!
+
+wait $USER_PID $GATEWAY_PID

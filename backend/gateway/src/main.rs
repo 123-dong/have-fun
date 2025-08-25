@@ -1,7 +1,7 @@
 use shared::utils;
 use tracing::info;
 
-mod grpc_client;
+mod grpc_clients;
 mod handlers;
 mod routes;
 mod state;
@@ -10,7 +10,7 @@ mod state;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     utils::init_logging();
 
-    let clients = grpc_client::GrpcClients::new().await;
+    let clients = grpc_clients::GrpcClients::new().await;
     let state = state::AppState { clients };
     let app = routes::app_routes(state);
 

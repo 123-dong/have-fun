@@ -1,4 +1,4 @@
-use crate::grpc_client::GrpcClients;
+use crate::grpc_clients::GrpcClients;
 use std::sync::Arc;
 
 #[derive(Clone)]

@@ -1,4 +1,4 @@
-use crate::handlers::user::get_user;
+use crate::handlers::user_handler::get_user;
 use crate::routes::*;
 
 pub(super) fn user_routes(state: AppState) -> Router {

@@ -3,18 +3,18 @@ use proto::user::v1::user_service_server::UserService;
 use tokio_stream::StreamExt;
 
 #[derive(Clone)]
-pub struct UserHdl {
+pub struct SvcImpl {
     svc: UserSvc,
 }
 
-impl UserHdl {
+impl SvcImpl {
     pub fn new(svc: UserSvc) -> Self {
         Self { svc }
     }
 }
 
 #[tonic::async_trait]
-impl UserService for UserHdl {
+impl UserService for SvcImpl {
     type ListFullStream = std::pin::Pin<
         Box<
             dyn tokio_stream::Stream<Item = Result<proto::user::v1::User, tonic::Status>>

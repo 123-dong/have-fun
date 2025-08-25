@@ -1,6 +1,6 @@
-mod handler;
 mod repository;
 mod service;
+mod service_impl;
 
 use proto::DESCRIPTOR_SET;
 use proto::user::v1::user_service_server::UserServiceServer;
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // repository -> service -> handler
     let user_repo = repository::UserRepo::new(pool);
     let user_svc = service::UserSvc::new(user_repo);
-    let user_hdl = handler::UserHdl::new(user_svc);
+    let user_hdl = service_impl::SvcImpl::new(user_svc);
 
     let addr = "[::1]:50051".parse()?;
     info!("gRPC server listening on {}", addr);
