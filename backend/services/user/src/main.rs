@@ -2,8 +2,8 @@ mod repository;
 mod service;
 mod service_impl;
 
-use proto::DESCRIPTOR_SET;
-use proto::user::v1::user_service_server::UserServiceServer;
+use proto::v1::DESCRIPTOR_SET;
+use proto::v1::user::user_service_server::UserServiceServer;
 use shared::{database, init_reflection, utils};
 use tracing::info;
 

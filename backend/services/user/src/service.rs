@@ -1,5 +1,5 @@
 use crate::repository::UserRepo;
-use shared::models::UserModel;
+use shared::models::DbUser;
 
 #[derive(Clone)]
 pub struct UserSvc {
@@ -11,21 +11,21 @@ impl UserSvc {
         Self { repo }
     }
 
-    pub async fn list_bulk(&self) -> sqlx::Result<Vec<UserModel>> {
+    pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
         self.repo.list_bulk().await
     }
 
     pub fn list_full(
         &self,
-    ) -> impl tokio_stream::Stream<Item = sqlx::Result<UserModel>> + Send + 'static {
+    ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
         self.repo.list_full()
     }
 
-    pub async fn get_user(&self, id: uuid::Uuid) -> sqlx::Result<Option<UserModel>> {
+    pub async fn get_user(&self, id: uuid::Uuid) -> sqlx::Result<Option<DbUser>> {
         self.repo.get(id).await
     }
 
-    pub async fn create_user(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
+    pub async fn create_user(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
         self.repo.create(name, email).await
     }
 
@@ -34,7 +34,7 @@ impl UserSvc {
         id: uuid::Uuid,
         name: &str,
         email: &str,
-    ) -> sqlx::Result<Option<UserModel>> {
+    ) -> sqlx::Result<Option<DbUser>> {
         self.repo.update(id, name, email).await
     }
 

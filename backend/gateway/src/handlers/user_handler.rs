@@ -1,8 +1,16 @@
-use crate::handlers::*;
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use proto::user::v1::GetRequest;
+use serde_json::json;
+use std::sync::Arc;
+
+use crate::grpc_clients::AppState;
 
 pub(crate) async fn get_user(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let mut client = state.clients.user.clone();

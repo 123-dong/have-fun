@@ -4,15 +4,15 @@ use tracing::info;
 mod grpc_clients;
 mod handlers;
 mod routes;
-mod state;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     utils::init_logging();
 
-    let clients = grpc_clients::GrpcClients::new().await;
-    let state = state::AppState { clients };
-    let app = routes::app_routes(state);
+    // let clients = grpc_clients::AppState::new().await;
+    let clients = grpc_clie;
+
+    let app = routes::app_routes(clients.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     info!("HTTP Gateway listening on 0.0.0.0:3000");

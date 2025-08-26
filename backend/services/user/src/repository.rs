@@ -1,5 +1,5 @@
 use shared::database::DbPool; // pub type DbPool = Arc<PgPool>;
-use shared::models::UserModel;
+use shared::models::DbUser;
 
 use async_stream::try_stream;
 use tokio_stream::StreamExt;
@@ -16,11 +16,11 @@ impl UserRepo {
 
     pub fn list_full(
         &self,
-    ) -> impl tokio_stream::Stream<Item = sqlx::Result<UserModel>> + Send + 'static {
+    ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
         let pool = self.pool.clone(); // own Arc<PgPool>
         try_stream! {
             let mut rows = sqlx::query_as!(
-                UserModel,
+                DbUser,
                 r#"SELECT id, name, email FROM users ORDER BY name"#
             )
             .fetch(&*pool);
@@ -31,9 +31,9 @@ impl UserRepo {
         }
     }
 
-    pub async fn list_bulk(&self) -> sqlx::Result<Vec<UserModel>> {
+    pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
         sqlx::query_as!(
-            UserModel,
+            DbUser,
             r#"
             SELECT id, name, email
             FROM users
@@ -44,9 +44,9 @@ impl UserRepo {
         .await
     }
 
-    pub async fn get(&self, id: uuid::Uuid) -> sqlx::Result<Option<UserModel>> {
+    pub async fn get(&self, id: uuid::Uuid) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
-            UserModel,
+            DbUser,
             r#"
             SELECT id, name, email
             FROM users
@@ -58,9 +58,9 @@ impl UserRepo {
         .await
     }
 
-    pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<UserModel> {
+    pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
         sqlx::query_as!(
-            UserModel,
+            DbUser,
             r#"
             INSERT INTO users (name, email)
             VALUES ($1, $2)
@@ -78,9 +78,9 @@ impl UserRepo {
         id: uuid::Uuid,
         name: &str,
         email: &str,
-    ) -> sqlx::Result<Option<UserModel>> {
+    ) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
-            UserModel,
+            DbUser,
             r#"
             UPDATE users
             SET name = $2, email = $3
