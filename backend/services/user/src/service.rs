@@ -17,8 +17,9 @@ impl UserSvc {
 
     pub fn list_full(
         &self,
-    ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
-        self.repo.list_full()
+    ) -> std::pin::Pin<Box<dyn tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static>>
+    {
+        Box::pin(self.repo.list_full())
     }
 
     pub async fn get_user(&self, id: uuid::Uuid) -> sqlx::Result<Option<DbUser>> {

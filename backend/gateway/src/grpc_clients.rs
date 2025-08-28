@@ -1,10 +1,22 @@
-use proto::user::v1::user_service_client::UserServiceClient;
+use proto::v1::user::user_service_client::UserServiceClient;
 use std::sync::Arc;
 use tonic::transport::Channel;
 
 #[derive(Clone)]
 pub struct GrpcClients {
     pub user: UserServiceClient<Channel>,
+    // pub order: OrderServiceClient<Channel>,
+}
+
+impl GrpcClients {
+    pub async fn new(addr: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let channel = Channel::from_shared(addr)?.connect().await?;
+
+        Ok(Self {
+            user: UserServiceClient::new(channel.clone()),
+            // order: OrderServiceClient::new(channel.clone()),
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -13,10 +25,8 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let user_client = UserServiceClient::connect("http://127.0.0.1:50051").await?;
-        let clients = GrpcClients { user: user_client };
-
+    pub async fn new(addr: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let clients = GrpcClients::new(addr).await?;
         Ok(Self {
             clients: Arc::new(clients),
         })

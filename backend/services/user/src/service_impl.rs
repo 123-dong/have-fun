@@ -24,11 +24,15 @@ impl UserService for SvcImpl {
 
     async fn list_full(
         &self,
-        _request: tonic::Request<()>,
+        _req: tonic::Request<()>,
     ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
-        let stream = self.svc.list_full().map(|res| {
-            res.map(proto::v1::user::User::from)
-                .map_err(|e| tonic::Status::internal(e.to_string()))
+        let stream = self.svc.list_full().map(|res| match res {
+            Ok(db) => Ok(proto::v1::user::User {
+                id: db.id.to_string(),
+                name: db.name,
+                email: db.email,
+            }),
+            Err(e) => Err(tonic::Status::internal(e.to_string())),
         });
 
         Ok(tonic::Response::new(Box::pin(stream)))

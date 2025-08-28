@@ -39,7 +39,7 @@ echo "${BLUE}--- GET DELETED USER (should fail) ---${NC}"
 set +e
 grpcurl -plaintext -d "{\"id\":\"$USER_ID\"}" $GRPC_HOST $SERVICE/Get
 if [ $? -ne 0 ]; then
-    echo "${RED}User not found (expected)${NC}"
+    echo "${RED}User not found (success expected)${NC}"
 fi
 set -e
 

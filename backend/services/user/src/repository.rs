@@ -1,12 +1,11 @@
+use async_stream::try_stream;
 use shared::database::DbPool; // pub type DbPool = Arc<PgPool>;
 use shared::models::DbUser;
-
-use async_stream::try_stream;
 use tokio_stream::StreamExt;
 
 #[derive(Clone)]
 pub struct UserRepo {
-    pool: DbPool,
+    pool: DbPool, // = Arc<PgPool>;
 }
 
 impl UserRepo {

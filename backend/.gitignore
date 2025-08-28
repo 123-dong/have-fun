@@ -18,5 +18,3 @@ proto/generated/
 .env
 .env.*
 !.env.example
-
-buf.yaml

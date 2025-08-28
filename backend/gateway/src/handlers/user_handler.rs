@@ -1,27 +1,28 @@
+use crate::grpc_clients::AppState; // pub clients: Arc<GrpcClients>
 use axum::{
     Json,
     extract::{Path, State},
     http::StatusCode,
 };
-use proto::user::v1::GetRequest;
+use proto::v1::user::GetRequest;
 use serde_json::json;
-use std::sync::Arc;
-
-use crate::grpc_clients::AppState;
 
 pub(crate) async fn get_user(
-    State(state): State<Arc<AppState>>,
+    State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let mut client = state.clients.user.clone();
-    let request = tonic::Request::new(GetRequest { id });
+    let clients = state.clients.clone();
 
-    match client.get(request).await {
-        Ok(response) => {
-            let user = response.into_inner();
+    // gRPC request
+    let req = tonic::Request::new(GetRequest { id });
+
+    match clients.user.clone().get(req).await {
+        Ok(resp) => {
+            let user = resp.into_inner();
             Ok(Json(json!({
                 "id": user.id,
                 "name": user.name,
+                "email": user.email,
             })))
         }
         Err(status) => {
