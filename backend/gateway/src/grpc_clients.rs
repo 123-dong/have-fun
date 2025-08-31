@@ -1,21 +1,29 @@
-use proto::v1::user::user_service_client::UserServiceClient;
 use std::sync::Arc;
 use tonic::transport::Channel;
+use tracing::info;
+
+fn connect_lazy(addr: impl Into<String>, service_name: &str) -> Channel {
+    let addr = addr.into();
+    let endpoint =
+        tonic::transport::Endpoint::from_shared(addr.clone()).expect("Invalid gRPC endpoint");
+
+    info!("Lazily connecting to {} at {}", service_name, addr);
+    endpoint.connect_lazy()
+}
 
 #[derive(Clone)]
 pub struct GrpcClients {
-    pub user: UserServiceClient<Channel>,
-    // pub order: OrderServiceClient<Channel>,
+    pub user: proto::v1::user::user_service_client::UserServiceClient<Channel>,
 }
 
 impl GrpcClients {
-    pub async fn new(addr: String) -> Result<Self, Box<dyn std::error::Error>> {
-        let channel = Channel::from_shared(addr)?.connect().await?;
-
-        Ok(Self {
-            user: UserServiceClient::new(channel.clone()),
-            // order: OrderServiceClient::new(channel.clone()),
-        })
+    pub fn new(user_addr: impl Into<String>) -> Self {
+        Self {
+            user: proto::v1::user::user_service_client::UserServiceClient::new(connect_lazy(
+                user_addr,
+                "UserService",
+            )),
+        }
     }
 }
 
@@ -25,10 +33,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(addr: String) -> Result<Self, Box<dyn std::error::Error>> {
-        let clients = GrpcClients::new(addr).await?;
-        Ok(Self {
-            clients: Arc::new(clients),
-        })
+    pub fn new(user_addr: impl Into<String>) -> Self {
+        Self {
+            clients: Arc::new(GrpcClients::new(user_addr)),
+        }
     }
 }

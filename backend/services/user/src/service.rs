@@ -1,5 +1,7 @@
 use crate::repository::UserRepo;
 use shared::models::DbUser;
+use std::pin::Pin;
+use tokio_stream::Stream;
 
 #[derive(Clone)]
 pub struct UserSvc {
@@ -15,10 +17,7 @@ impl UserSvc {
         self.repo.list_bulk().await
     }
 
-    pub fn list_full(
-        &self,
-    ) -> std::pin::Pin<Box<dyn tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static>>
-    {
+    pub fn list_full(&self) -> Pin<Box<dyn Stream<Item = sqlx::Result<DbUser>> + Send + 'static>> {
         Box::pin(self.repo.list_full())
     }
 

@@ -9,7 +9,7 @@ tokio-stream = "0.1.17"
 async-stream = "0.3.6"
 
 # Web & gRPC
-axum = "0.7.9"
+axum = { version = "0.7.9", features = ["macros"] }
 tonic = "0.12.3"
 tonic-build = "0.12.3"
 tonic-reflection = "0.12.3"

@@ -1,14 +1,14 @@
 syntax = "proto3";
+
 package user.v1;
 
 import "google/protobuf/empty.proto";
 
 service UserService {
-  rpc Create(CreateRequest) returns (User);
-  rpc Get(GetRequest) returns (User);
-  rpc Update(UpdateRequest) returns (User);
-  rpc Delete(GetRequest) returns (DeleteResponse);
-
+  rpc Create(CreateRequest) returns (CreateResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
   rpc ListBulk(google.protobuf.Empty) returns (ListBulkResponse);
   rpc ListFull(google.protobuf.Empty) returns (stream User);
 }
@@ -35,7 +35,23 @@ message UpdateRequest {
   string email = 3;
 }
 
+message DeleteRequest {
+  string id = 1;
+}
+
 // Responses
+message CreateResponse {
+  User user = 1;
+}
+
+message GetResponse {
+  User user = 1;
+}
+
+message UpdateResponse {
+  User user = 1;
+}
+
 message DeleteResponse {
   bool success = 1;
 }

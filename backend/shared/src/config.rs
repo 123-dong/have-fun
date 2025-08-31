@@ -1,47 +1,34 @@
-use dotenvy::dotenv;
-use std::env;
+use serde::Deserialize;
+use std::path::Path;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Config {
+#[derive(Debug, Clone, Deserialize)]
+pub struct AppConfig {
     pub database_url: String,
-    pub grpc_port: u16,
-    pub rest_port: u16,
+    pub service_port: u16,
 }
 
-impl Config {
-    pub fn from_env() -> Self {
-        Config::from_env_with_defaults(50051, 8080).unwrap()
+impl AppConfig {
+    pub fn from_env_file<P: AsRef<Path>>(env_path: P) -> Self {
+        if env_path.as_ref().exists() {
+            dotenvy::from_path(env_path).ok();
+        } else {
+            dotenvy::dotenv().ok(); // fallback
+        }
+
+        let database_url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://admin:123@localhost:5432/demo_db".into());
+        let service_port = std::env::var("SERVICE_PORT")
+            .unwrap_or_else(|_| "50051".into())
+            .parse()
+            .expect("SERVICE_PORT must be a number");
+
+        AppConfig {
+            database_url,
+            service_port,
+        }
     }
 
-    pub fn from_env_with_defaults(
-        default_grpc_port: u16,
-        default_rest_port: u16,
-    ) -> Result<Self, String> {
-        dotenv().ok();
-
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set.");
-
-        let grpc_port = match env::var("GRPC_PORT") {
-            Ok(port_str) => port_str
-                .parse()
-                .map_err(|e| format!("Invalid GRPC_PORT: {}", e)),
-            Err(_) => Ok(default_grpc_port),
-        };
-
-        let rest_port = match env::var("REST_PORT") {
-            Ok(port_str) => port_str
-                .parse()
-                .map_err(|e| format!("Invalid REST_PORT: {}", e)),
-            Err(_) => Ok(default_rest_port),
-        };
-
-        let grpc_port = grpc_port?;
-        let rest_port = rest_port?;
-
-        Ok(Self {
-            database_url,
-            grpc_port,
-            rest_port,
-        })
+    pub fn from_env() -> Self {
+        Self::from_env_file(".env")
     }
 }

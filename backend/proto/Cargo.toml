@@ -7,6 +7,8 @@ build = "build.rs"
 [dependencies]
 tonic = { workspace = true }
 prost = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }

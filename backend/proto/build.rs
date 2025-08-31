@@ -10,13 +10,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let proto_files = collect_proto_files(&proto_root, &generated_path);
 
-    println!("Found proto files: {:?}", proto_files);
+    println!("Found proto files: {proto_files:?}");
 
     tonic_build::configure()
         .file_descriptor_set_path(generated_path.join(DESCRIPTOR_FILE))
         .build_server(true)
         .build_client(true)
         .out_dir(&generated_path)
+        .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
         .compile_protos(&proto_files, &[proto_root.to_str().unwrap()])?;
 
     Ok(())

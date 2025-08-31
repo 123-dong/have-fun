@@ -1,11 +1,12 @@
 use async_stream::try_stream;
-use shared::database::DbPool; // pub type DbPool = Arc<PgPool>;
+use shared::database::DbPool; // type DbPool = Arc<PgPool>
 use shared::models::DbUser;
 use tokio_stream::StreamExt;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct UserRepo {
-    pool: DbPool, // = Arc<PgPool>;
+    pool: DbPool,
 }
 
 impl UserRepo {
@@ -16,7 +17,7 @@ impl UserRepo {
     pub fn list_full(
         &self,
     ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
-        let pool = self.pool.clone(); // own Arc<PgPool>
+        let pool = self.pool.clone();
         try_stream! {
             let mut rows = sqlx::query_as!(
                 DbUser,
@@ -43,7 +44,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn get(&self, id: uuid::Uuid) -> sqlx::Result<Option<DbUser>> {
+    pub async fn get(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -72,12 +73,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn update(
-        &self,
-        id: uuid::Uuid,
-        name: &str,
-        email: &str,
-    ) -> sqlx::Result<Option<DbUser>> {
+    pub async fn update(&self, id: Uuid, name: &str, email: &str) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -94,7 +90,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn delete(&self, id: uuid::Uuid) -> sqlx::Result<bool> {
+    pub async fn delete(&self, id: Uuid) -> sqlx::Result<bool> {
         let result = sqlx::query!(
             r#"
             DELETE FROM users
@@ -104,6 +100,7 @@ impl UserRepo {
         )
         .execute(&*self.pool)
         .await?;
+
         Ok(result.rows_affected() > 0)
     }
 }
