@@ -2,15 +2,13 @@ syntax = "proto3";
 
 package user.v1;
 
-import "google/protobuf/empty.proto";
-
 service UserService {
   rpc Create(CreateRequest) returns (CreateResponse);
   rpc Get(GetRequest) returns (GetResponse);
   rpc Update(UpdateRequest) returns (UpdateResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
-  rpc ListBulk(google.protobuf.Empty) returns (ListBulkResponse);
-  rpc ListFull(google.protobuf.Empty) returns (stream User);
+  rpc ListBulk(ListBulkRequest) returns (ListBulkResponse); // Unary -> repeated field
+  rpc ListFull(ListFullRequest) returns (stream User); // Server streaming
 }
 
 message User {
@@ -38,6 +36,9 @@ message UpdateRequest {
 message DeleteRequest {
   string id = 1;
 }
+
+message ListFullRequest {}
+message ListBulkRequest {}
 
 // Responses
 message CreateResponse {

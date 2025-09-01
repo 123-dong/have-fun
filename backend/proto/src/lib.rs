@@ -3,4 +3,7 @@ pub mod v1 {
     pub mod user {
         include!("../generated/user.v1.rs");
     }
+    pub mod product {
+        include!("../generated/product.v1.rs");
+    }
 }

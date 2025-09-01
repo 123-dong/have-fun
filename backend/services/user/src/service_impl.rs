@@ -14,14 +14,6 @@ impl SvcImpl {
 
 #[tonic::async_trait]
 impl proto::v1::user::user_service_server::UserService for SvcImpl {
-    type ListFullStream = std::pin::Pin<
-        Box<
-            dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>>
-                + Send
-                + 'static,
-        >,
-    >;
-
     async fn create(
         &self,
         request: tonic::Request<proto::v1::user::CreateRequest>,
@@ -101,7 +93,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
 
     async fn list_bulk(
         &self,
-        _request: tonic::Request<()>,
+        _request: tonic::Request<proto::v1::user::ListBulkRequest>,
     ) -> Result<tonic::Response<proto::v1::user::ListBulkResponse>, tonic::Status> {
         let users = self
             .svc
@@ -114,9 +106,13 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         }))
     }
 
+    type ListFullStream = std::pin::Pin<
+        Box<dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>> + Send>,
+    >;
+
     async fn list_full(
         &self,
-        _request: tonic::Request<()>,
+        _request: tonic::Request<proto::v1::user::ListFullRequest>,
     ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
         let stream = self.svc.list_full().map(|res| match res {
             Ok(u) => Ok(u.into()),

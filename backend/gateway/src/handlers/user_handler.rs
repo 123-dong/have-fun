@@ -3,7 +3,9 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use proto::v1::user::{CreateRequest, DeleteRequest, GetRequest, UpdateRequest};
+use proto::v1::user::{
+    CreateRequest, DeleteRequest, GetRequest, ListBulkRequest, ListFullRequest, UpdateRequest,
+};
 use serde_json::json;
 use tokio_stream::StreamExt;
 
@@ -96,7 +98,7 @@ pub async fn list_bulk(
         .clients
         .user
         .clone()
-        .list_bulk({})
+        .list_bulk(ListBulkRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
         .into_inner();
@@ -113,7 +115,7 @@ pub async fn list_full(
         .clients
         .user
         .clone()
-        .list_full({})
+        .list_full(ListFullRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
         .into_inner();

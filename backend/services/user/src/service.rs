@@ -13,12 +13,12 @@ impl UserSvc {
         Self { repo }
     }
 
-    pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
-        self.repo.list_bulk().await
-    }
-
     pub fn list_full(&self) -> Pin<Box<dyn Stream<Item = sqlx::Result<DbUser>> + Send + 'static>> {
         Box::pin(self.repo.list_full())
+    }
+
+    pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
+        self.repo.list_bulk().await
     }
 
     pub async fn get_user(&self, id: uuid::Uuid) -> sqlx::Result<Option<DbUser>> {

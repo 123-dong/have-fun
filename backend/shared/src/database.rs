@@ -13,13 +13,7 @@ pub async fn init_pg_pool(db_url: &str, max_conn: u32) -> Result<DbPool, sqlx::E
         .connect(db_url)
         .await?;
 
-    info!("Connected to database, MAX connections: {}", max_conn);
+    info!("Connected to DB, MAX connections: {}", max_conn);
 
     Ok(Arc::new(pool))
-}
-
-pub async fn ping_db(pool: &DbPool) -> sqlx::Result<()> {
-    sqlx::query("SELECT 1").execute(pool.as_ref()).await?;
-    info!("Ping database @K!");
-    Ok(())
 }

@@ -40,6 +40,12 @@ pub struct DeleteRequest {
     #[prost(string, tag = "1")]
     pub id: ::prost::alloc::string::String,
 }
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ListFullRequest {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ListBulkRequest {}
 /// Responses
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -245,7 +251,7 @@ pub mod user_service_client {
         }
         pub async fn list_bulk(
             &mut self,
-            request: impl tonic::IntoRequest<()>,
+            request: impl tonic::IntoRequest<super::ListBulkRequest>,
         ) -> std::result::Result<
             tonic::Response<super::ListBulkResponse>,
             tonic::Status,
@@ -269,7 +275,7 @@ pub mod user_service_client {
         }
         pub async fn list_full(
             &mut self,
-            request: impl tonic::IntoRequest<()>,
+            request: impl tonic::IntoRequest<super::ListFullRequest>,
         ) -> std::result::Result<
             tonic::Response<tonic::codec::Streaming<super::User>>,
             tonic::Status,
@@ -324,7 +330,7 @@ pub mod user_service_server {
         ) -> std::result::Result<tonic::Response<super::DeleteResponse>, tonic::Status>;
         async fn list_bulk(
             &self,
-            request: tonic::Request<()>,
+            request: tonic::Request<super::ListBulkRequest>,
         ) -> std::result::Result<
             tonic::Response<super::ListBulkResponse>,
             tonic::Status,
@@ -337,7 +343,7 @@ pub mod user_service_server {
             + 'static;
         async fn list_full(
             &self,
-            request: tonic::Request<()>,
+            request: tonic::Request<super::ListFullRequest>,
         ) -> std::result::Result<tonic::Response<Self::ListFullStream>, tonic::Status>;
     }
     #[derive(Debug)]
@@ -597,14 +603,19 @@ pub mod user_service_server {
                 "/user.v1.UserService/ListBulk" => {
                     #[allow(non_camel_case_types)]
                     struct ListBulkSvc<T: UserService>(pub Arc<T>);
-                    impl<T: UserService> tonic::server::UnaryService<()>
+                    impl<
+                        T: UserService,
+                    > tonic::server::UnaryService<super::ListBulkRequest>
                     for ListBulkSvc<T> {
                         type Response = super::ListBulkResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
-                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ListBulkRequest>,
+                        ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 <T as UserService>::list_bulk(&inner, request).await
@@ -637,7 +648,9 @@ pub mod user_service_server {
                 "/user.v1.UserService/ListFull" => {
                     #[allow(non_camel_case_types)]
                     struct ListFullSvc<T: UserService>(pub Arc<T>);
-                    impl<T: UserService> tonic::server::ServerStreamingService<()>
+                    impl<
+                        T: UserService,
+                    > tonic::server::ServerStreamingService<super::ListFullRequest>
                     for ListFullSvc<T> {
                         type Response = super::User;
                         type ResponseStream = T::ListFullStream;
@@ -645,7 +658,10 @@ pub mod user_service_server {
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
-                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ListFullRequest>,
+                        ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 <T as UserService>::list_full(&inner, request).await
