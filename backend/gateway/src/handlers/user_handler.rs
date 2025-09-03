@@ -1,13 +1,14 @@
-use crate::grpc_clients::AppState; // pub clients: Arc<GrpcClients>
 use axum::{
     Json,
     extract::{Path, State},
 };
+use serde_json::json;
+use tokio_stream::StreamExt;
+
+use crate::grpc_clients::AppState; // pub clients: Arc<GrpcClients>
 use proto::v1::user::{
     CreateRequest, DeleteRequest, GetRequest, ListBulkRequest, ListFullRequest, UpdateRequest,
 };
-use serde_json::json;
-use tokio_stream::StreamExt;
 
 pub async fn create_user(
     State(state): State<AppState>,

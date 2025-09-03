@@ -31,6 +31,10 @@ impl UserRepo {
         }
     }
 
+    // pub fn list_full(&self) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + '_ {
+    //     sqlx::query_as::<_, DbUser>("SELECT id, name, email FROM users").fetch(&*self.pool)
+    // }
+
     pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
         sqlx::query_as!(
             DbUser,
