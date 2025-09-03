@@ -57,8 +57,12 @@ pub async fn update_user(
 ) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
     let req = UpdateRequest {
         id,
-        name: payload["name"].as_str().unwrap_or_default().to_string(),
-        email: payload["email"].as_str().unwrap_or_default().to_string(),
+        name: payload
+            .get("name")
+            .and_then(|v| v.as_str().map(|s| s.to_string())),
+        email: payload
+            .get("email")
+            .and_then(|v| v.as_str().map(|s| s.to_string())),
     };
 
     let resp = state

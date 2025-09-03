@@ -1,14 +1,15 @@
-use crate::service::UserSvc;
 use tokio_stream::StreamExt;
 
+use super::repository::UserRepo;
+
 #[derive(Clone)]
-pub struct SvcImpl {
-    svc: UserSvc,
+pub(super) struct SvcImpl {
+    repo: UserRepo,
 }
 
 impl SvcImpl {
-    pub fn new(svc: UserSvc) -> Self {
-        Self { svc }
+    pub(super) fn new(repo: UserRepo) -> Self {
+        Self { repo }
     }
 }
 
@@ -21,8 +22,8 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         let req = request.into_inner();
 
         let user: proto::v1::user::User = self
-            .svc
-            .create_user(&req.name, &req.email)
+            .repo
+            .create(&req.name, &req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .into();
@@ -40,8 +41,8 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let user: proto::v1::user::User = self
-            .svc
-            .get_user(id)
+            .repo
+            .get(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?
@@ -61,8 +62,8 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let user: proto::v1::user::User = self
-            .svc
-            .update_user(id, &req.name, &req.email)
+            .repo
+            .update(id, req.name, req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?
@@ -81,8 +82,8 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
 
         let deleted = self
-            .svc
-            .delete_user(id)
+            .repo
+            .delete(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
 
@@ -96,7 +97,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         _request: tonic::Request<proto::v1::user::ListBulkRequest>,
     ) -> Result<tonic::Response<proto::v1::user::ListBulkResponse>, tonic::Status> {
         let users = self
-            .svc
+            .repo
             .list_bulk()
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
@@ -114,7 +115,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         &self,
         _request: tonic::Request<proto::v1::user::ListFullRequest>,
     ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
-        let stream = self.svc.list_full().map(|res| match res {
+        let stream = self.repo.list_full().map(|res| match res {
             Ok(u) => Ok(u.into()),
             Err(e) => Err(tonic::Status::internal(e.to_string())),
         });

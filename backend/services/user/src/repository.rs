@@ -1,20 +1,21 @@
 use async_stream::try_stream;
-use shared::database::DbPool; // type DbPool = Arc<PgPool>
-use shared::models::DbUser;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 
+use shared::database::DbPool; // type DbPool = Arc<PgPool>
+use shared::models::DbUser;
+
 #[derive(Clone)]
-pub struct UserRepo {
+pub(super) struct UserRepo {
     pool: DbPool,
 }
 
 impl UserRepo {
-    pub fn new(pool: DbPool) -> Self {
+    pub(super) fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
-    pub fn list_full(
+    pub(super) fn list_full(
         &self,
     ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
         let pool = self.pool.clone();
@@ -31,11 +32,7 @@ impl UserRepo {
         }
     }
 
-    // pub fn list_full(&self) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + '_ {
-    //     sqlx::query_as::<_, DbUser>("SELECT id, name, email FROM users").fetch(&*self.pool)
-    // }
-
-    pub async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
+    pub(super) async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -48,7 +45,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn get(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
+    pub(super) async fn get(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -62,7 +59,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn create(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
+    pub(super) async fn create(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -77,7 +74,12 @@ impl UserRepo {
         .await
     }
 
-    pub async fn update(&self, id: Uuid, name: &str, email: &str) -> sqlx::Result<Option<DbUser>> {
+    pub(super) async fn update(
+        &self,
+        id: Uuid,
+        name: Option<String>,
+        email: Option<String>,
+    ) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -94,7 +96,7 @@ impl UserRepo {
         .await
     }
 
-    pub async fn delete(&self, id: Uuid) -> sqlx::Result<bool> {
+    pub(super) async fn delete(&self, id: Uuid) -> sqlx::Result<bool> {
         let result = sqlx::query!(
             r#"
             DELETE FROM users

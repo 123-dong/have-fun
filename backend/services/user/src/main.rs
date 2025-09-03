@@ -1,5 +1,4 @@
 mod repository;
-mod service;
 mod service_impl;
 
 use proto::v1::DESCRIPTOR_SET;
@@ -16,10 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("{:?}", cfg);
 
     let pool = database::init_pg_pool(&cfg.database_url, 5).await?;
-
     let user_repo = repository::UserRepo::new(pool);
-    let user_svc = service::UserSvc::new(user_repo);
-    let svc_impl = service_impl::SvcImpl::new(user_svc);
+    let svc_impl = service_impl::SvcImpl::new(user_repo);
 
     let refl = init_reflection!(DESCRIPTOR_SET)?;
 

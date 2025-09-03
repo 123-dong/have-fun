@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use tracing::info;
 
+mod controller;
 mod grpc_clients;
-mod handlers;
 mod routes;
 use shared::{config, utils};
 

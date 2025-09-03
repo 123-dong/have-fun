@@ -1,4 +1,4 @@
-use crate::handlers::user_handler::*;
+use crate::controller::user_handler::*;
 use crate::routes::*;
 use axum::routing::{get, post};
 
