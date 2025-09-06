@@ -19,4 +19,10 @@ pub enum AppError {
 
     #[error("Tonic error: {0}")]
     Tonic(#[from] tonic::transport::Error),
+
+    #[error("Axum error: {0}")]
+    Axum(#[from] axum::Error),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error), // tokio
 }

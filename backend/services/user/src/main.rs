@@ -14,14 +14,14 @@ async fn main() -> Result<(), AppError> {
     let cfg = config::AppConfig::from_env(env_path)?;
     tracing::info!("{:?}", cfg); // dev
 
-    let pool = database::init_pg_pool(cfg.database.url, cfg.database.max_connections).await?;
+    let pool = database::init_pg_pool(cfg.database.dsn, cfg.database.capacity).await?;
 
     let repo = repository::UserRepo::new(pool);
     let svc = service_impl::SvcImpl::new(repo);
 
     let reflection = utils::init_refl(DESCRIPTOR_SET)?;
 
-    let addr = format!("[{}]:{}", cfg.web.host, cfg.web.port)
+    let addr = format!("[{}]:{}", cfg.web.web_host, cfg.web.web_port)
         .parse()
         .expect("Invalid host:port");
 

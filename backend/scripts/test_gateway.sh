@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -e
 
-BASE_URL="http://localhost:3000/users"
+BASE_URL="http://localhost:3001/users"
 
 # ANSI colors
 BLUE='\033[1;34m'

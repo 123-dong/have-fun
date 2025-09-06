@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 proto = { path = "../proto" }
 
+axum = { workspace = true }
 tokio = { workspace = true }
 tonic = { workspace = true }
 tonic-reflection = { workspace = true }
