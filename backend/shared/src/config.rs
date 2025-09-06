@@ -1,33 +1,41 @@
-use serde::Deserialize;
-use std::path::Path;
+use crate::errors::AppError;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
+pub struct Postgres {
+    pub url: String,
+    pub max_connections: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct Web {
+    pub host: String,
+    pub port: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct AppConfig {
-    pub database_url: String,
-    pub service_port: u16,
-    pub user_grpc: String,
-    pub product_grpc: String,
+    pub database: Postgres,
+    pub web: Web,
 }
 
 impl AppConfig {
-    pub fn from_env_file<P: AsRef<Path>>(env_path: P) -> Self {
-        if dotenvy::from_path(env_path).is_err() {
-            dotenvy::dotenv().ok(); // fallback
-        }
+    pub fn from_env(env_path: std::path::PathBuf) -> Result<Self, AppError> {
+        dotenvy::from_path(env_path).map_err(|e| AppError::Dotenvy(e))?;
 
-        Self {
-            database_url: std::env::var("DATABASE_URL")
-                .unwrap_or_else(|_| "postgres://admin:123@localhost:5432/demo_db".into()),
-
-            service_port: std::env::var("SERVICE_PORT")
-                .ok()
-                .and_then(|p| p.parse().ok())
-                .unwrap_or(3000),
-
-            user_grpc: std::env::var("USER_GRPC").unwrap_or_else(|_| "http://[::1]:50058".into()),
-
-            product_grpc: std::env::var("PRODUCT_GRPC")
-                .unwrap_or_else(|_| "http://[::1]:50059".into()),
-        }
+        let url = get_var("DATABASE_URL")?;
+        let max_connections = get_var("MAX_CONNECTIONS")?.parse::<u32>()?;
+        let host = get_var("WEB_HOST")?;
+        let port = get_var("WEB_PORT")?;
+        Ok(Self {
+            database: Postgres {
+                url,
+                max_connections,
+            },
+            web: Web { host, port },
+        })
     }
+}
+
+fn get_var(key: &str) -> Result<String, AppError> {
+    dotenvy::var(key).map_err(|_| AppError::MissingVar(key.into()))
 }

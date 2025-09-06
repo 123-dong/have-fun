@@ -3,6 +3,7 @@ use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 use shared::database::DbPool; // type DbPool = Arc<PgPool>
+use shared::errors::AppError;
 use shared::models::DbUser;
 
 #[derive(Clone)]
@@ -17,7 +18,7 @@ impl UserRepo {
 
     pub(super) fn list_full(
         &self,
-    ) -> impl tokio_stream::Stream<Item = sqlx::Result<DbUser>> + Send + 'static {
+    ) -> impl tokio_stream::Stream<Item = Result<DbUser, AppError>> + Send + 'static {
         let pool = self.pool.clone();
         try_stream! {
             let mut rows = sqlx::query_as!(

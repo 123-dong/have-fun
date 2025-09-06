@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -e
 
-GRPC_HOST="localhost:50058"
+GRPC_HOST="localhost:50055"
 SERVICE="user.v1.UserService"
 
 # ANSI colors

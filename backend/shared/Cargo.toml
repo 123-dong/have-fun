@@ -7,11 +7,13 @@ edition = "2024"
 proto = { path = "../proto" }
 
 tokio = { workspace = true }
+tonic = { workspace = true }
 tonic-reflection = { workspace = true }
-sqlx = { workspace = true }
-dotenvy = { workspace = true }
 uuid = { workspace = true }
-serde = { workspace = true }
-
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+dotenvy = { workspace = true }
+thiserror = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
