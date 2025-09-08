@@ -2,11 +2,11 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
-    #[error("Dotenvy error: {0}")]
-    Dotenvy(#[from] dotenvy::Error),
+    #[error("Dotenv error: {0}")]
+    Dotenv(#[from] dotenvy::Error),
 
-    #[error("Sqlx error: {0}")]
-    Sqlx(#[from] sqlx::Error),
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
 
     #[error("Parse int error: {0}")]
     ParseInt(#[from] std::num::ParseIntError),
@@ -17,12 +17,12 @@ pub enum AppError {
     #[error("Reflection error: {0}")]
     Reflection(#[from] tonic_reflection::server::Error),
 
-    #[error("Tonic error: {0}")]
-    Tonic(#[from] tonic::transport::Error),
-
-    #[error("Axum error: {0}")]
-    Axum(#[from] axum::Error),
+    #[error("Transport error: {0}")]
+    Transport(#[from] tonic::transport::Error),
 
     #[error(transparent)]
-    Io(#[from] std::io::Error), // tokio
+    Io(#[from] std::io::Error),
+
+    #[error("Unexpected error: {0}")]
+    Other(String),
 }

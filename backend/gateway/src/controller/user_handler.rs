@@ -2,22 +2,28 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use serde_json::json;
+
+use axum::response::sse::{Event, Sse};
+use std::convert::Infallible;
 use tokio_stream::StreamExt;
 
+// use crate::errors::AppError;
 use crate::grpc_clients::AppState; // pub clients: Arc<GrpcClients>
 use proto::v1::user::{
     CreateRequest, DeleteRequest, GetRequest, ListBulkRequest, ListFullRequest, UpdateRequest,
 };
+use proto::v1::user::{
+    CreateResponse, DeleteResponse, GetResponse, ListBulkResponse, UpdateResponse,
+};
 
 pub async fn create_user(
     State(state): State<AppState>,
-    Json(payload): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
-    let req = CreateRequest {
-        name: payload["name"].as_str().unwrap_or_default().to_string(),
-        email: payload["email"].as_str().unwrap_or_default().to_string(),
-    };
+    Json(payload): Json<CreateRequest>,
+) -> Result<Json<CreateResponse>, axum::http::StatusCode> {
+    let req = tonic::Request::new(CreateRequest {
+        name: payload.name,
+        email: payload.email,
+    });
 
     let resp = state
         .clients
@@ -27,16 +33,15 @@ pub async fn create_user(
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(json!({
-        "user": resp.into_inner().user
-    })))
+    Ok(Json(resp.into_inner()))
 }
 
 pub async fn get_user(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
+) -> Result<Json<GetResponse>, axum::http::StatusCode> {
     let req = GetRequest { id };
+
     let resp = state
         .clients
         .user
@@ -45,24 +50,18 @@ pub async fn get_user(
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(json!({
-        "user": resp.into_inner().user
-    })))
+    Ok(Json(resp.into_inner()))
 }
 
 pub async fn update_user(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
+    Json(payload): Json<UpdateRequest>,
+) -> Result<Json<UpdateResponse>, axum::http::StatusCode> {
     let req = UpdateRequest {
         id,
-        name: payload
-            .get("name")
-            .and_then(|v| v.as_str().map(|s| s.to_string())),
-        email: payload
-            .get("email")
-            .and_then(|v| v.as_str().map(|s| s.to_string())),
+        name: payload.name,
+        email: payload.email,
     };
 
     let resp = state
@@ -73,15 +72,13 @@ pub async fn update_user(
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(json!({
-        "user": resp.into_inner().user
-    })))
+    Ok(Json(resp.into_inner()))
 }
 
 pub async fn delete_user(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
+) -> Result<Json<DeleteResponse>, axum::http::StatusCode> {
     let req = DeleteRequest { id };
     let resp = state
         .clients
@@ -91,49 +88,59 @@ pub async fn delete_user(
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(json!({
-        "success": resp.into_inner().success
-    })))
+    Ok(Json(resp.into_inner()))
 }
 
-pub async fn list_bulk(
+pub async fn list_bulk_user(
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
+) -> Result<Json<ListBulkResponse>, axum::http::StatusCode> {
     let resp = state
         .clients
         .user
         .clone()
         .list_bulk(ListBulkRequest {})
         .await
-        .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
-        .into_inner();
+        .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(json!({
-        "users": resp.users
-    })))
+    Ok(Json(resp.into_inner()))
 }
 
-pub async fn list_full(
+pub async fn list_full_user(
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
-    let mut stream = state
-        .clients
-        .user
-        .clone()
+) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
+{
+    let mut client = state.clients.user.clone();
+
+    let mut stream = client
         .list_full(ListFullRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
         .into_inner();
 
-    let mut users = vec![];
-    while let Some(user_res) = stream.next().await {
-        match user_res {
-            Ok(u) => users.push(u),
-            Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
-        }
-    }
+    // channel map gRPC stream -> SSE stream
+    let (tx, rx) = tokio::sync::mpsc::channel(16);
 
-    Ok(Json(json!({
-        "users": users
-    })))
+    // running task forward data
+    tokio::spawn(async move {
+        while let Some(user) = stream.next().await {
+            match user {
+                Ok(user) => {
+                    let event = Event::default()
+                        .json_data(&user) // serialize User thành JSON
+                        .unwrap();
+                    let _ = tx.send(Ok(event)).await;
+                }
+                Err(_) => break,
+            }
+        }
+    });
+
+    // wrap stream -> SSE
+    Ok(
+        Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)).keep_alive(
+            axum::response::sse::KeepAlive::new()
+                .interval(tokio::time::Duration::from_secs(10))
+                .text("keep-alive"),
+        ),
+    )
 }
