@@ -16,14 +16,16 @@ impl UserRepo {
         Self { pool }
     }
 
-    pub(super) fn list_full(
+    pub(super) fn stream_all_users(
         &self,
     ) -> impl tokio_stream::Stream<Item = Result<DbUser, AppError>> + Send + 'static {
         let pool = self.pool.clone();
         try_stream! {
             let mut rows = sqlx::query_as!(
                 DbUser,
-                r#"SELECT id, name, email FROM users ORDER BY name"#
+                r#"SELECT id, name, email
+                FROM users 
+                ORDER BY name"#
             )
             .fetch(&*pool);
 
@@ -33,7 +35,7 @@ impl UserRepo {
         }
     }
 
-    pub(super) async fn list_bulk(&self) -> sqlx::Result<Vec<DbUser>> {
+    pub(super) async fn list_all_users(&self) -> sqlx::Result<Vec<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -46,7 +48,7 @@ impl UserRepo {
         .await
     }
 
-    pub(super) async fn get(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
+    pub(super) async fn select_user_by_id(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -60,7 +62,7 @@ impl UserRepo {
         .await
     }
 
-    pub(super) async fn create(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
+    pub(super) async fn insert_user(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
         sqlx::query_as!(
             DbUser,
             r#"
@@ -75,7 +77,8 @@ impl UserRepo {
         .await
     }
 
-    pub(super) async fn update(
+    // fix sticky field name, email
+    pub(super) async fn update_user_by_id(
         &self,
         id: Uuid,
         name: Option<String>,
@@ -97,7 +100,7 @@ impl UserRepo {
         .await
     }
 
-    pub(super) async fn delete(&self, id: Uuid) -> sqlx::Result<bool> {
+    pub(super) async fn delete_user_by_id(&self, id: Uuid) -> sqlx::Result<bool> {
         let result = sqlx::query!(
             r#"
             DELETE FROM users

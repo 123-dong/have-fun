@@ -1,69 +1,46 @@
-# ==== ENV ====
-.env
-*.env
-*.env.*  
-
-# ==== LOG ====
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# ==== OS & IDE ====
+# ------------------------
+# OS / Editor junk
+# ------------------------
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-.history/
+*.swp
 
-# ==== NODE / JS ====
+# ------------------------
+# Environment files
+# ------------------------
+.env
+**/.env
+
+# ------------------------
+# Logs
+# ------------------------
+*.log
+npm-debug.log
+yarn-error.log
+
+# ------------------------
+# Rust artifacts
+# ------------------------
+target/
+Cargo.lock   
+
+# ------------------------
+# Node / Frontend artifacts
+# ------------------------
 node_modules/
 dist/
 build/
-.cache/
-.next/
-.nuxt/
-out/
 .vite/
-.vitepress/
-.vercel/
-.netlify/
-coverage/
 
-# ==== RUST ====
-target/
-Cargo.lock 
+# ------------------------
+# Generated code
+# ------------------------
+backend/proto/generated/
 
-# ==== DOCKER ====
+# ------------------------
+# Docker
+# ------------------------
+.dockerignore
 docker-compose.override.yml
-.docker/
-
-# ==== PYTHON ====
-__pycache__/
-*.pyc
-
-# ==== COMMON ====
-*.swp
-*.swo
-
-# ==== TEMP ====
-tmp/
-temp/
-
-# ==== MONOREPO ====
-**/node_modules/
-**/dist/
-**/build/
-**/target/
-**/.next/
-**/.nuxt/
-**/out/
-**/.cache/
-**/.vite/
-**/.vitepress/
-**/.vercel/
-**/.netlify/
-**/coverage/
-**/__pycache__/
-**/*.pyc

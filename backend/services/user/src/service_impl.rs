@@ -15,6 +15,10 @@ impl SvcImpl {
 
 #[tonic::async_trait]
 impl proto::v1::user::user_service_server::UserService for SvcImpl {
+    type ListFullStream = std::pin::Pin<
+        Box<dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>> + Send>,
+    >;
+
     async fn create(
         &self,
         request: tonic::Request<proto::v1::user::CreateRequest>,
@@ -23,7 +27,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
 
         let user: proto::v1::user::User = self
             .repo
-            .create(&req.name, &req.email)
+            .insert_user(&req.name, &req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .into();
@@ -42,7 +46,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
 
         let user: proto::v1::user::User = self
             .repo
-            .get(id)
+            .select_user_by_id(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?
@@ -63,7 +67,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
 
         let user: proto::v1::user::User = self
             .repo
-            .update(id, req.name, req.email)
+            .update_user_by_id(id, req.name, req.email)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?
             .ok_or_else(|| tonic::Status::not_found("user not found"))?
@@ -83,7 +87,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
 
         let deleted = self
             .repo
-            .delete(id)
+            .delete_user_by_id(id)
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
 
@@ -98,7 +102,7 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
     ) -> Result<tonic::Response<proto::v1::user::ListBulkResponse>, tonic::Status> {
         let users = self
             .repo
-            .list_bulk()
+            .list_all_users()
             .await
             .map_err(|e| tonic::Status::internal(e.to_string()))?;
 
@@ -107,15 +111,11 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         }))
     }
 
-    type ListFullStream = std::pin::Pin<
-        Box<dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>> + Send>,
-    >;
-
     async fn list_full(
         &self,
         _request: tonic::Request<proto::v1::user::ListFullRequest>,
     ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
-        let stream = self.repo.list_full().map(|res| match res {
+        let stream = self.repo.stream_all_users().map(|res| match res {
             Ok(u) => Ok(u.into()),
             Err(e) => Err(tonic::Status::internal(e.to_string())),
         });

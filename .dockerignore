@@ -1,47 +1,29 @@
-# 📦 Node.js
-node_modules/
-dist/
-build/
-.vite/
+# Git
+.git
+.gitignore
 
-# 🍃 Vite cache
-.vite/
+# Node.js
+node_modules
+dist
+build
+npm-debug.log
+yarn-error.log
 
-# 🔧 Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# Rust
+target
+Cargo.lock
 
-# 📂 VSCode
-.vscode/
+# Env files
+.env
+**/.env
 
-# 📁 OS files
+# OS / Editor junk
 .DS_Store
 Thumbs.db
-
-# 🐙 Rust
-/target/
-/**/target/
-**/*.rs.bk
-
-# 🐹 Go
-**/bin/
-**/vendor/
-**/*.exe
-**/*.exe~
-**/*.dll
-**/*.so
-**/*.dylib
-
-# 📜 Misc
-*.log
-*.tmp
+.idea
+.vscode
 *.swp
 
-# 💡 By language convention
-.idea/
-*.iml
-
-# ⚙️ Cargo specific
-Cargo.lock (optional, if it's a library)
+# Docker stuff
+docker-compose.yml
+Dockerfile

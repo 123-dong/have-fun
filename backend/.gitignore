@@ -1,20 +1,22 @@
 # Rust build
-/target/
-**/*.rs.bk
-# Cargo
-Cargo.lock
-# IDE/Editor
-.vscode/
-.idea/
-*.iml
+target/
+
+# Env files
+.env
+**/.env
+
 # Logs
 *.log
-# OS junk files
+
+# Generated code from proto
+proto/generated/
+
+# Editor/OS junk
 .DS_Store
 Thumbs.db
-# Generated code (proto, build.rs output)
-proto/generated/
-# Environment & secrets
-.env
-.env.*
-!.env.example
+.idea/
+.vscode/
+*.swp
+
+# Optional: Cargo.lock (nếu muốn commit chỉ ở root)
+Cargo.lock

@@ -91,7 +91,7 @@ pub async fn delete_user(
     Ok(Json(resp.into_inner()))
 }
 
-pub async fn list_bulk_user(
+pub async fn list_user(
     State(state): State<AppState>,
 ) -> Result<Json<ListBulkResponse>, axum::http::StatusCode> {
     let resp = state
@@ -105,42 +105,110 @@ pub async fn list_bulk_user(
     Ok(Json(resp.into_inner()))
 }
 
-pub async fn list_full_user(
+// pub async fn stream_user(
+//     State(state): State<AppState>,
+// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
+// {
+//     let mut client = state.clients.user.clone();
+
+//     let mut stream = client
+//         .list_full(ListFullRequest {})
+//         .await
+//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
+//         .into_inner();
+
+//     // channel map gRPC stream -> SSE stream
+//     let (tx, rx) = tokio::sync::mpsc::channel(16);
+
+//     // running task forward data
+//     tokio::spawn(async move {
+//         while let Some(user) = stream.next().await {
+//             match user {
+//                 Ok(user) => {
+//                     let event = Event::default()
+//                         .json_data(&user) // serialize User -> JSON
+//                         .unwrap();
+//                     let _ = tx.send(Ok(event)).await;
+//                 }
+//                 Err(_) => break,
+//             }
+//         }
+//         // ended log
+//         let _ = tx
+//             .send(Ok(Event::default().event("done").data("stream ended")))
+//             .await;
+//     });
+
+//     // wrap stream -> SSE
+//     Ok(
+//         Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)).keep_alive(
+//             axum::response::sse::KeepAlive::new()
+//                 .interval(tokio::time::Duration::from_secs(10))
+//                 .text("keep-alive"),
+//         ),
+//     )
+// }
+
+// pub async fn stream_user(
+//     State(state): State<AppState>,
+// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
+// {
+//     let mut stream = state
+//         .clients
+//         .user
+//         .clone()
+//         .list_full(ListFullRequest {})
+//         .await
+//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
+//         .into_inner();
+
+//     let (tx, rx) = tokio::sync::mpsc::channel(8);
+
+//     tokio::spawn(async move {
+//         while let Some(user) = stream.next().await {
+//             if let Ok(user) = user {
+//                 if let Ok(event) = Event::default().json_data(&user) {
+//                     let _ = tx.send(Ok(event)).await;
+//                 }
+//             }
+//         }
+//     });
+
+//     Ok(Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+// }
+
+pub async fn stream_user(
     State(state): State<AppState>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
 {
-    let mut client = state.clients.user.clone();
-
-    let mut stream = client
+    let mut stream = state
+        .clients
+        .user
+        .clone()
         .list_full(ListFullRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
         .into_inner();
 
-    // channel map gRPC stream -> SSE stream
-    let (tx, rx) = tokio::sync::mpsc::channel(16);
-
-    // running task forward data
-    tokio::spawn(async move {
-        while let Some(user) = stream.next().await {
-            match user {
+    // map gRPC stream -> SSE stream
+    let sse_stream = async_stream::stream! {
+        while let Some(u) = stream.next().await {
+            match u {
                 Ok(user) => {
-                    let event = Event::default()
-                        .json_data(&user) // serialize User thành JSON
-                        .unwrap();
-                    let _ = tx.send(Ok(event)).await;
+                    if let Ok(event) = Event::default().json_data(&user) {
+                        yield Ok(event);
+                    }
                 }
-                Err(_) => break,
+                Err(_) => break, // fast panic
             }
         }
-    });
 
-    // wrap stream -> SSE
-    Ok(
-        Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)).keep_alive(
-            axum::response::sse::KeepAlive::new()
-                .interval(tokio::time::Duration::from_secs(10))
-                .text("keep-alive"),
-        ),
-    )
+        yield Ok(Event::default().event("done").data("stream ended"));
+    };
+
+    Ok(Sse::new(sse_stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(tokio::time::Duration::from_secs(10))
+            .text("keep-alive"),
+    ))
 }
