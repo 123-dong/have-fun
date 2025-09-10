@@ -25,4 +25,7 @@ pub enum AppError {
 
     #[error("Unexpected error: {0}")]
     Other(String),
+
+    #[error("User not found")]
+    NotFound,
 }

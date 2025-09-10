@@ -2,9 +2,10 @@ use async_stream::try_stream;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 
-use shared::database::DbPool; // type DbPool = Arc<PgPool>
+use shared::database::DbPool;
 use shared::errors::AppError;
 use shared::models::DbUser;
+use tracing::{error, info};
 
 #[derive(Clone)]
 pub(super) struct UserRepo {
@@ -23,93 +24,92 @@ impl UserRepo {
         try_stream! {
             let mut rows = sqlx::query_as!(
                 DbUser,
-                r#"SELECT id, name, email
-                FROM users 
-                ORDER BY name"#
+                "SELECT id, name, email FROM users ORDER BY name"
             )
             .fetch(&*pool);
 
             while let Some(row) = rows.next().await {
-                yield row?;
+                let u = row?;
+                info!(user_id = %u.id, user_name = %u.name, "Streaming user");
+                yield u;
             }
         }
     }
 
-    pub(super) async fn list_all_users(&self) -> sqlx::Result<Vec<DbUser>> {
-        sqlx::query_as!(
-            DbUser,
-            r#"
-            SELECT id, name, email
-            FROM users
-            ORDER BY name
-            "#
-        )
-        .fetch_all(&*self.pool)
-        .await
+    pub(super) async fn list_all_users(&self) -> Result<Vec<DbUser>, AppError> {
+        info!("Listing all users");
+        sqlx::query_as!(DbUser, "SELECT id, name, email FROM users ORDER BY name")
+            .fetch_all(&*self.pool)
+            .await
+            .map_err(|e| {
+                error!("Failed to list all users: {:?}", e);
+                AppError::from(e)
+            })
     }
 
-    pub(super) async fn select_user_by_id(&self, id: Uuid) -> sqlx::Result<Option<DbUser>> {
+    pub(super) async fn select_user_by_id(&self, id: Uuid) -> Result<Option<DbUser>, AppError> {
+        info!(user_id = %id, "Selecting user by ID");
         sqlx::query_as!(
             DbUser,
-            r#"
-            SELECT id, name, email
-            FROM users
-            WHERE id = $1
-            "#,
+            "SELECT id, name, email FROM users WHERE id = $1",
             id
         )
         .fetch_optional(&*self.pool)
         .await
+        .map_err(|e| {
+            error!(user_id = %id, "Failed to select user: {:?}", e);
+            AppError::from(e)
+        })
     }
 
-    pub(super) async fn insert_user(&self, name: &str, email: &str) -> sqlx::Result<DbUser> {
+    pub(super) async fn insert_user(&self, name: &str, email: &str) -> Result<DbUser, AppError> {
+        info!(user_name = %name, user_email = %email, "Inserting new user");
         sqlx::query_as!(
             DbUser,
-            r#"
-            INSERT INTO users (name, email)
-            VALUES ($1, $2)
-            RETURNING id, name, email
-            "#,
+            "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email",
             name,
             email
         )
         .fetch_one(&*self.pool)
         .await
+        .map_err(|e| {
+            error!(user_name = %name, user_email = %email, "Failed to insert user: {:?}", e);
+            AppError::from(e)
+        })
     }
 
-    // fix sticky field name, email
+    // TODO: fix sticky name, email field
     pub(super) async fn update_user_by_id(
         &self,
         id: Uuid,
         name: Option<String>,
         email: Option<String>,
-    ) -> sqlx::Result<Option<DbUser>> {
+    ) -> Result<Option<DbUser>, AppError> {
+        info!(user_id = %id, "Updating user");
         sqlx::query_as!(
             DbUser,
-            r#"
-            UPDATE users
-            SET name = $2, email = $3
-            WHERE id = $1
-            RETURNING id, name, email
-            "#,
+            "UPDATE users SET name = $2, email = $3 WHERE id = $1 RETURNING id, name, email",
             id,
             name,
             email
         )
         .fetch_optional(&*self.pool)
         .await
+        .map_err(|e| {
+            error!(user_id = %id, "Failed to update user: {:?}", e);
+            AppError::from(e)
+        })
     }
 
-    pub(super) async fn delete_user_by_id(&self, id: Uuid) -> sqlx::Result<bool> {
-        let result = sqlx::query!(
-            r#"
-            DELETE FROM users
-            WHERE id = $1
-            "#,
-            id
-        )
-        .execute(&*self.pool)
-        .await?;
+    pub(super) async fn delete_user_by_id(&self, id: Uuid) -> Result<bool, AppError> {
+        info!(user_id = %id, "Deleting user");
+        let result = sqlx::query!("DELETE FROM users WHERE id = $1", id)
+            .execute(&*self.pool)
+            .await
+            .map_err(|e| {
+                error!(user_id = %id, "Failed to delete user: {:?}", e);
+                AppError::from(e)
+            })?;
 
         Ok(result.rows_affected() > 0)
     }

@@ -18,5 +18,4 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Optional: Cargo.lock (nếu muốn commit chỉ ở root)
 Cargo.lock

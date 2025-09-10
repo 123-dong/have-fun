@@ -192,19 +192,20 @@ pub async fn stream_user(
 
     // map gRPC stream -> SSE stream
     let sse_stream = async_stream::stream! {
-        while let Some(u) = stream.next().await {
-            match u {
-                Ok(user) => {
-                    if let Ok(event) = Event::default().json_data(&user) {
-                        yield Ok(event);
+            while let Some(u) = stream.next().await {
+                match u {
+                    Ok(user) => {
+                        if let Ok(event) = Event::default().json_data(&user) {
+                            yield Ok(event);
+                        }
                     }
+                   Err(e) => {
+        tracing::error!("gRPC stream error: {:?}", e);
+        break;
+    }
                 }
-                Err(_) => break, // fast panic
             }
-        }
-
-        yield Ok(Event::default().event("done").data("stream ended"));
-    };
+        };
 
     Ok(Sse::new(sse_stream).keep_alive(
         axum::response::sse::KeepAlive::new()
@@ -212,3 +213,53 @@ pub async fn stream_user(
             .text("keep-alive"),
     ))
 }
+
+// pub async fn stream_user(
+//     State(state): State<AppState>,
+// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
+// {
+//     let mut grpc_stream = state
+//         .clients
+//         .user
+//         .clone()
+//         .list_full(ListFullRequest {})
+//         .await
+//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
+//         .into_inner();
+
+//     let mut last_users: std::collections::HashMap<String, String> =
+//         std::collections::HashMap::new();
+
+//     let sse_stream = async_stream::stream! {
+//         while let Some(u) = grpc_stream.next().await {
+//             match u {
+//                 Ok(user) => {
+//                     if let Ok(json_data) = serde_json::to_string(&user) {
+//                         let send_full = match last_users.get(&user.id) {
+//                             Some(last_json) if last_json == &json_data => false,
+//                             _ => true,
+//                         };
+
+//                         if send_full {
+//                             last_users.insert(user.id.clone(), json_data.clone());
+
+//                             if let Ok(event) = Event::default().json_data(&user) {
+//                                 yield Ok(event);
+//                             }
+//                         }
+//                     }
+//                 }
+//                 Err(e) => {
+//                     tracing::info!("gRPC stream error: {:?}", e);
+//                     break;
+//                 }
+//             }
+//         }
+//     };
+
+//     Ok(Sse::new(sse_stream).keep_alive(
+//         axum::response::sse::KeepAlive::new()
+//             .interval(tokio::time::Duration::from_secs(10))
+//             .text("keep-alive"),
+//     ))
+// }

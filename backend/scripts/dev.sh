@@ -4,7 +4,7 @@ cargo run --bin user &
 USER_PID=$!
 
 echo "Waiting for user service..."
-until nc -z localhost 50051; do
+until nc -z localhost 50055; do
   sleep 1
 done
 echo "User service is up!"
