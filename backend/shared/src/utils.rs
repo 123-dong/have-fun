@@ -18,7 +18,13 @@ pub async fn shutdown_signal() {
 }
 
 pub fn init_logging() {
-    tracing_subscriber::fmt().compact().init();
+    tracing_subscriber::fmt()
+        .compact()
+        .pretty()
+        .with_timer(tracing_subscriber::fmt::time::ChronoLocal::new(
+            "%Y-%m-%d %H:%M".to_string(),
+        ))
+        .init();
 }
 
 pub fn init_refl(

@@ -52,10 +52,10 @@ if [ $? -ne 0 ]; then
 fi
 set -e
 
-echo "${BLUE}--- LIST BULK USERS ---${NC}"
-grpcurl -plaintext -d '{}' $GRPC_HOST $SERVICE/ListBulk && \
-echo "${GREEN}ListBulk success${NC}"
+echo "${BLUE}--- LIST USERS ---${NC}"
+grpcurl -plaintext -d '{}' $GRPC_HOST $SERVICE/List && \
+echo "${GREEN}LIST success${NC}"
 
-echo "${BLUE}--- LIST FULL USERS (stream) ---${NC}"
-grpcurl -plaintext -d '{}' $GRPC_HOST $SERVICE/ListFull && \
-echo "${GREEN}ListFull success${NC}"
+echo "${BLUE}--- STREAM USERS ---${NC}"
+grpcurl -plaintext -d '{}' $GRPC_HOST $SERVICE/Stream && \
+echo "${GREEN}STREAM success${NC}"

@@ -7,14 +7,12 @@ use axum::response::sse::{Event, Sse};
 use std::convert::Infallible;
 use tokio_stream::StreamExt;
 
-// use crate::errors::AppError;
 use crate::grpc_clients::AppState; // pub clients: Arc<GrpcClients>
 use proto::v1::user::{
-    CreateRequest, DeleteRequest, GetRequest, ListBulkRequest, ListFullRequest, UpdateRequest,
+    CreateRequest, DeleteRequest, GetRequest, ListRequest, StreamRequest, UpdateRequest,
 };
-use proto::v1::user::{
-    CreateResponse, DeleteResponse, GetResponse, ListBulkResponse, UpdateResponse,
-};
+use proto::v1::user::{CreateResponse, DeleteResponse, GetResponse, ListResponse, UpdateResponse};
+// use crate::errors::AppError;
 
 pub async fn create_user(
     State(state): State<AppState>,
@@ -93,173 +91,48 @@ pub async fn delete_user(
 
 pub async fn list_user(
     State(state): State<AppState>,
-) -> Result<Json<ListBulkResponse>, axum::http::StatusCode> {
+) -> Result<Json<ListResponse>, axum::http::StatusCode> {
     let resp = state
         .clients
         .user
         .clone()
-        .list_bulk(ListBulkRequest {})
+        .list(ListRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(resp.into_inner()))
 }
 
-// pub async fn stream_user(
-//     State(state): State<AppState>,
-// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
-// {
-//     let mut client = state.clients.user.clone();
-
-//     let mut stream = client
-//         .list_full(ListFullRequest {})
-//         .await
-//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
-//         .into_inner();
-
-//     // channel map gRPC stream -> SSE stream
-//     let (tx, rx) = tokio::sync::mpsc::channel(16);
-
-//     // running task forward data
-//     tokio::spawn(async move {
-//         while let Some(user) = stream.next().await {
-//             match user {
-//                 Ok(user) => {
-//                     let event = Event::default()
-//                         .json_data(&user) // serialize User -> JSON
-//                         .unwrap();
-//                     let _ = tx.send(Ok(event)).await;
-//                 }
-//                 Err(_) => break,
-//             }
-//         }
-//         // ended log
-//         let _ = tx
-//             .send(Ok(Event::default().event("done").data("stream ended")))
-//             .await;
-//     });
-
-//     // wrap stream -> SSE
-//     Ok(
-//         Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)).keep_alive(
-//             axum::response::sse::KeepAlive::new()
-//                 .interval(tokio::time::Duration::from_secs(10))
-//                 .text("keep-alive"),
-//         ),
-//     )
-// }
-
-// pub async fn stream_user(
-//     State(state): State<AppState>,
-// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
-// {
-//     let mut stream = state
-//         .clients
-//         .user
-//         .clone()
-//         .list_full(ListFullRequest {})
-//         .await
-//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
-//         .into_inner();
-
-//     let (tx, rx) = tokio::sync::mpsc::channel(8);
-
-//     tokio::spawn(async move {
-//         while let Some(user) = stream.next().await {
-//             if let Ok(user) = user {
-//                 if let Ok(event) = Event::default().json_data(&user) {
-//                     let _ = tx.send(Ok(event)).await;
-//                 }
-//             }
-//         }
-//     });
-
-//     Ok(Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
-// }
-
 pub async fn stream_user(
     State(state): State<AppState>,
-) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
-{
+) -> Result<
+    Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>> + Send + 'static>,
+    axum::http::StatusCode,
+> {
     let mut stream = state
         .clients
         .user
         .clone()
-        .list_full(ListFullRequest {})
+        .stream(StreamRequest {})
         .await
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
         .into_inner();
 
-    // map gRPC stream -> SSE stream
     let sse_stream = async_stream::stream! {
-            while let Some(u) = stream.next().await {
-                match u {
-                    Ok(user) => {
-                        if let Ok(event) = Event::default().json_data(&user) {
-                            yield Ok(event);
-                        }
+        while let Some(user) = stream.next().await {
+            match user {
+                Ok(u) => {
+                    if let Ok(event) = Event::default().json_data(&u) {
+                        yield Ok(event);
                     }
-                   Err(e) => {
-        tracing::error!("gRPC stream error: {:?}", e);
-        break;
-    }
+                }
+                Err(e) => {
+                    eprintln!("gRPC stream error: {:?}", e);
+                    break;
                 }
             }
-        };
+        }
+    };
 
-    Ok(Sse::new(sse_stream).keep_alive(
-        axum::response::sse::KeepAlive::new()
-            .interval(tokio::time::Duration::from_secs(10))
-            .text("keep-alive"),
-    ))
+    Ok(Sse::new(Box::pin(sse_stream)))
 }
-
-// pub async fn stream_user(
-//     State(state): State<AppState>,
-// ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, axum::http::StatusCode>
-// {
-//     let mut grpc_stream = state
-//         .clients
-//         .user
-//         .clone()
-//         .list_full(ListFullRequest {})
-//         .await
-//         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?
-//         .into_inner();
-
-//     let mut last_users: std::collections::HashMap<String, String> =
-//         std::collections::HashMap::new();
-
-//     let sse_stream = async_stream::stream! {
-//         while let Some(u) = grpc_stream.next().await {
-//             match u {
-//                 Ok(user) => {
-//                     if let Ok(json_data) = serde_json::to_string(&user) {
-//                         let send_full = match last_users.get(&user.id) {
-//                             Some(last_json) if last_json == &json_data => false,
-//                             _ => true,
-//                         };
-
-//                         if send_full {
-//                             last_users.insert(user.id.clone(), json_data.clone());
-
-//                             if let Ok(event) = Event::default().json_data(&user) {
-//                                 yield Ok(event);
-//                             }
-//                         }
-//                     }
-//                 }
-//                 Err(e) => {
-//                     tracing::info!("gRPC stream error: {:?}", e);
-//                     break;
-//                 }
-//             }
-//         }
-//     };
-
-//     Ok(Sse::new(sse_stream).keep_alive(
-//         axum::response::sse::KeepAlive::new()
-//             .interval(tokio::time::Duration::from_secs(10))
-//             .text("keep-alive"),
-//     ))
-// }

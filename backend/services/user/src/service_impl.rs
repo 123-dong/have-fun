@@ -1,6 +1,7 @@
-use tokio_stream::StreamExt;
-
 use super::repository::UserRepo;
+use shared::errors::ServiceError;
+use tokio_stream::StreamExt;
+use tracing::info;
 
 #[derive(Clone)]
 pub(super) struct SvcImpl {
@@ -13,25 +14,28 @@ impl SvcImpl {
     }
 }
 
+type StreamResponse = std::pin::Pin<
+    Box<dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>> + Send>,
+>;
+type StreamResult<T> = Result<tonic::Response<T>, tonic::Status>;
+
 #[tonic::async_trait]
 impl proto::v1::user::user_service_server::UserService for SvcImpl {
-    type ListFullStream = std::pin::Pin<
-        Box<dyn tokio_stream::Stream<Item = Result<proto::v1::user::User, tonic::Status>> + Send>,
-    >;
-
     async fn create(
         &self,
         request: tonic::Request<proto::v1::user::CreateRequest>,
     ) -> Result<tonic::Response<proto::v1::user::CreateResponse>, tonic::Status> {
         let req = request.into_inner();
+        info!(name = %req.name, email = %req.email, "create user request");
 
         let user: proto::v1::user::User = self
             .repo
             .insert_user(&req.name, &req.email)
             .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?
+            .map_err(ServiceError::from)?
             .into();
 
+        info!(user_id = %user.id, "user created");
         Ok(tonic::Response::new(proto::v1::user::CreateResponse {
             user: Some(user),
         }))
@@ -43,15 +47,17 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
     ) -> Result<tonic::Response<proto::v1::user::GetResponse>, tonic::Status> {
         let id = uuid::Uuid::parse_str(&request.into_inner().id)
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
+        info!(%id, "get user request");
 
         let user: proto::v1::user::User = self
             .repo
             .select_user_by_id(id)
             .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?
-            .ok_or_else(|| tonic::Status::not_found("user not found"))?
+            .map_err(ServiceError::from)?
+            .ok_or(ServiceError::NotFound)?
             .into();
 
+        info!(%id, "user fetched");
         Ok(tonic::Response::new(proto::v1::user::GetResponse {
             user: Some(user),
         }))
@@ -64,15 +70,17 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
         let req = request.into_inner();
         let id = uuid::Uuid::parse_str(&req.id)
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
+        info!(%id, name = ?req.name, email = ?req.email, "update user request");
 
         let user: proto::v1::user::User = self
             .repo
             .update_user_by_id(id, req.name, req.email)
             .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?
-            .ok_or_else(|| tonic::Status::not_found("user not found"))?
+            .map_err(ServiceError::from)?
+            .ok_or(ServiceError::NotFound)?
             .into();
 
+        info!(%id, "user updated");
         Ok(tonic::Response::new(proto::v1::user::UpdateResponse {
             user: Some(user),
         }))
@@ -84,44 +92,46 @@ impl proto::v1::user::user_service_server::UserService for SvcImpl {
     ) -> Result<tonic::Response<proto::v1::user::DeleteResponse>, tonic::Status> {
         let id = uuid::Uuid::parse_str(&request.into_inner().id)
             .map_err(|_| tonic::Status::invalid_argument("invalid uuid"))?;
+        info!(%id, "delete user request");
 
         let deleted = self
             .repo
             .delete_user_by_id(id)
             .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?;
+            .map_err(ServiceError::from)?;
 
+        info!(%id, success = deleted, "user delete result");
         Ok(tonic::Response::new(proto::v1::user::DeleteResponse {
             success: deleted,
         }))
     }
 
-    async fn list_bulk(
+    async fn list(
         &self,
-        _request: tonic::Request<proto::v1::user::ListBulkRequest>,
-    ) -> Result<tonic::Response<proto::v1::user::ListBulkResponse>, tonic::Status> {
-        let users = self
-            .repo
-            .list_all_users()
-            .await
-            .map_err(|e| tonic::Status::internal(e.to_string()))?;
+        request: tonic::Request<proto::v1::user::ListRequest>,
+    ) -> Result<tonic::Response<proto::v1::user::ListResponse>, tonic::Status> {
+        info!(remote = ?request.remote_addr(), "list users request");
 
-        Ok(tonic::Response::new(proto::v1::user::ListBulkResponse {
+        let users = self.repo.list_users().await.map_err(ServiceError::from)?;
+        info!(count = users.len(), "users listed");
+
+        Ok(tonic::Response::new(proto::v1::user::ListResponse {
             users: users.into_iter().map(Into::into).collect(),
         }))
     }
 
-    async fn list_full(
+    type StreamStream = StreamResponse;
+    async fn stream(
         &self,
-        _request: tonic::Request<proto::v1::user::ListFullRequest>,
-    ) -> Result<tonic::Response<Self::ListFullStream>, tonic::Status> {
-        let stream = self.repo.stream_all_users().map(|res| match res {
-            Ok(u) => Ok(u.into()),
-            Err(e) => Err(tonic::Status::internal(e.to_string())),
+        request: tonic::Request<proto::v1::user::StreamRequest>,
+    ) -> StreamResult<Self::StreamStream> {
+        info!(remote = ?request.remote_addr(), "stream users request");
+
+        let stream = self.repo.stream_users().map(|res| {
+            res.map(Into::into)
+                .map_err(|e| ServiceError::from(e).into())
         });
 
-        Ok(tonic::Response::new(
-            Box::pin(stream) as Self::ListFullStream
-        ))
+        Ok(tonic::Response::new(Box::pin(stream) as Self::StreamStream))
     }
 }

@@ -10,17 +10,14 @@ use shared::{config, database, utils};
 async fn main() -> Result<(), AppError> {
     utils::init_logging();
     let env_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".env");
-
     let cfg = config::AppConfig::from_env(env_path)?;
     tracing::info!("{:?}", cfg); // dev
 
     let pool = database::init_pg_pool(cfg.database.dsn, cfg.database.capacity).await?;
-
     let repo = repository::UserRepo::new(pool);
     let svc = service_impl::SvcImpl::new(repo);
 
     let reflection = utils::init_refl(DESCRIPTOR_SET)?;
-
     let addr = format!("[{}]:{}", cfg.web.web_host, cfg.web.web_port)
         .parse()
         .expect("Invalid host:port");

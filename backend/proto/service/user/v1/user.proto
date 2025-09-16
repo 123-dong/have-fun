@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package user.v1;
 
 service UserService {
@@ -7,8 +6,8 @@ service UserService {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Update(UpdateRequest) returns (UpdateResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
-  rpc ListBulk(ListBulkRequest) returns (ListBulkResponse); // Unary -> repeated field
-  rpc ListFull(ListFullRequest) returns (stream User); // Server streaming
+  rpc List(ListRequest) returns (ListResponse); // Unary -> repeated field
+  rpc Stream(StreamRequest) returns (stream User); // Server streaming
 }
 
 message User {
@@ -29,16 +28,16 @@ message GetRequest {
 
 message UpdateRequest {
   string id = 1;
-  optional string name = 2;
-  optional string email = 3;
+  string name = 2;
+  string email = 3;
 }
 
 message DeleteRequest {
   string id = 1;
 }
 
-message ListFullRequest {}
-message ListBulkRequest {}
+message ListRequest {}
+message StreamRequest {}
 
 // Responses
 message CreateResponse {
@@ -57,6 +56,6 @@ message DeleteResponse {
   bool success = 1;
 }
 
-message ListBulkResponse {
+message ListResponse {
   repeated User users = 1;
 }

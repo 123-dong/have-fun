@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gateway", "services/user", "shared", "proto"]
+members = ["gateway", "services/user", "shared", "proto", "services/chat"]
 
 [workspace.dependencies]
 # Async runtime
@@ -10,18 +10,14 @@ async-stream = "0.3.6"
 
 # Web & gRPC
 axum = { version = "0.7.9", features = ["macros"] }
+prost = "0.13.5"
 tonic = "0.12.3"
 tonic-build = "0.12.3"
 tonic-reflection = "0.12.3"
-prost = "0.13.5"
 tower-http = { version = "0.6.6", features = ["cors"] }
 
 # Database & UUID
-sqlx = { version = "0.7.4", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "uuid",
-] }
+sqlx = { version = "0.8.1", features = ["runtime-tokio", "postgres", "uuid"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
 # Serialization
@@ -29,8 +25,9 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
 
 # Logging & error handling
+chrono = "0.4.42"
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
+tracing-subscriber = { version = "0.3.20", features = ["fmt", "chrono"] }
 thiserror = "2.0.16"
 
 # Env variables

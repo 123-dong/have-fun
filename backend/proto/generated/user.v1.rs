@@ -29,10 +29,10 @@ pub struct GetRequest {
 pub struct UpdateRequest {
     #[prost(string, tag = "1")]
     pub id: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "2")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "3")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub email: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -42,10 +42,10 @@ pub struct DeleteRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct ListFullRequest {}
+pub struct ListRequest {}
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct ListBulkRequest {}
+pub struct StreamRequest {}
 /// Responses
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -73,7 +73,7 @@ pub struct DeleteResponse {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListBulkResponse {
+pub struct ListResponse {
     #[prost(message, repeated, tag = "1")]
     pub users: ::prost::alloc::vec::Vec<User>,
 }
@@ -249,13 +249,10 @@ pub mod user_service_client {
                 .insert(GrpcMethod::new("user.v1.UserService", "Delete"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn list_bulk(
+        pub async fn list(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListBulkRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListBulkResponse>,
-            tonic::Status,
-        > {
+            request: impl tonic::IntoRequest<super::ListRequest>,
+        ) -> std::result::Result<tonic::Response<super::ListResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -265,17 +262,14 @@ pub mod user_service_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/user.v1.UserService/ListBulk",
-            );
+            let path = http::uri::PathAndQuery::from_static("/user.v1.UserService/List");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("user.v1.UserService", "ListBulk"));
+            req.extensions_mut().insert(GrpcMethod::new("user.v1.UserService", "List"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn list_full(
+        pub async fn stream(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListFullRequest>,
+            request: impl tonic::IntoRequest<super::StreamRequest>,
         ) -> std::result::Result<
             tonic::Response<tonic::codec::Streaming<super::User>>,
             tonic::Status,
@@ -290,11 +284,11 @@ pub mod user_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/user.v1.UserService/ListFull",
+                "/user.v1.UserService/Stream",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("user.v1.UserService", "ListFull"));
+                .insert(GrpcMethod::new("user.v1.UserService", "Stream"));
             self.inner.server_streaming(req, path, codec).await
         }
     }
@@ -328,23 +322,20 @@ pub mod user_service_server {
             &self,
             request: tonic::Request<super::DeleteRequest>,
         ) -> std::result::Result<tonic::Response<super::DeleteResponse>, tonic::Status>;
-        async fn list_bulk(
+        async fn list(
             &self,
-            request: tonic::Request<super::ListBulkRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListBulkResponse>,
-            tonic::Status,
-        >;
-        /// Server streaming response type for the ListFull method.
-        type ListFullStream: tonic::codegen::tokio_stream::Stream<
+            request: tonic::Request<super::ListRequest>,
+        ) -> std::result::Result<tonic::Response<super::ListResponse>, tonic::Status>;
+        /// Server streaming response type for the Stream method.
+        type StreamStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::User, tonic::Status>,
             >
             + std::marker::Send
             + 'static;
-        async fn list_full(
+        async fn stream(
             &self,
-            request: tonic::Request<super::ListFullRequest>,
-        ) -> std::result::Result<tonic::Response<Self::ListFullStream>, tonic::Status>;
+            request: tonic::Request<super::StreamRequest>,
+        ) -> std::result::Result<tonic::Response<Self::StreamStream>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct UserServiceServer<T> {
@@ -600,25 +591,23 @@ pub mod user_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/user.v1.UserService/ListBulk" => {
+                "/user.v1.UserService/List" => {
                     #[allow(non_camel_case_types)]
-                    struct ListBulkSvc<T: UserService>(pub Arc<T>);
-                    impl<
-                        T: UserService,
-                    > tonic::server::UnaryService<super::ListBulkRequest>
-                    for ListBulkSvc<T> {
-                        type Response = super::ListBulkResponse;
+                    struct ListSvc<T: UserService>(pub Arc<T>);
+                    impl<T: UserService> tonic::server::UnaryService<super::ListRequest>
+                    for ListSvc<T> {
+                        type Response = super::ListResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ListBulkRequest>,
+                            request: tonic::Request<super::ListRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as UserService>::list_bulk(&inner, request).await
+                                <T as UserService>::list(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -629,7 +618,7 @@ pub mod user_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = ListBulkSvc(inner);
+                        let method = ListSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -645,26 +634,26 @@ pub mod user_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/user.v1.UserService/ListFull" => {
+                "/user.v1.UserService/Stream" => {
                     #[allow(non_camel_case_types)]
-                    struct ListFullSvc<T: UserService>(pub Arc<T>);
+                    struct StreamSvc<T: UserService>(pub Arc<T>);
                     impl<
                         T: UserService,
-                    > tonic::server::ServerStreamingService<super::ListFullRequest>
-                    for ListFullSvc<T> {
+                    > tonic::server::ServerStreamingService<super::StreamRequest>
+                    for StreamSvc<T> {
                         type Response = super::User;
-                        type ResponseStream = T::ListFullStream;
+                        type ResponseStream = T::StreamStream;
                         type Future = BoxFuture<
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ListFullRequest>,
+                            request: tonic::Request<super::StreamRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as UserService>::list_full(&inner, request).await
+                                <T as UserService>::stream(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -675,7 +664,7 @@ pub mod user_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = ListFullSvc(inner);
+                        let method = StreamSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
